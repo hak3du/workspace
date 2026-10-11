@@ -53,9 +53,17 @@ export async function GET(req: NextRequest) {
     const limitRaw = parseInt(sp.get("limit") || "24", 10);
     const limit = Math.max(1, Math.min(Number.isNaN(limitRaw) ? 24 : limitRaw, 96));
 
+    // Never label the global feed as "Following". Until follow relationships are
+    // implemented, return an honest empty result for that tab.
+    if (tab === "following") {
+      return NextResponse.json({
+        tokens: [],
+        message: "Following feed is not available yet",
+      });
+    }
+
     const where: Record<string, unknown> = {};
     if (tab === "created") where.creatorId = user.id;
-    // "following" is a placeholder for now — same universe feed as "terminal".
     if (q) {
       where.OR = [{ name: { contains: q } }, { symbol: { contains: q } }];
     }
