@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { curveProgress, fakeMint, fakeTxSig, spotPrice, LAUNCH_FEE_SOL, TOTAL_SUPPLY } from "@/lib/bonding";
+import { isSimulationMode } from "@/lib/marketplace/config";
 import { SOL_USD } from "@/lib/format";
 import type { TokenDTO, UserDTO } from "@/lib/types";
 
@@ -93,6 +94,18 @@ export async function GET(req: NextRequest) {
 
 // POST /api/tokens — launch a new token on the bonding curve.
 export async function POST(req: NextRequest) {
+  // The legacy implementation below creates synthetic mints/signatures and must
+  // never run in devnet/mainnet mode. Fail closed until a real adapter is merged.
+  if (!isSimulationMode()) {
+    return NextResponse.json(
+      {
+        error: "Real token launches are not enabled yet. No Solana transaction was submitted.",
+        code: "PUMPFUN_ADAPTER_NOT_IMPLEMENTED",
+      },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   try {
     const user = await getSessionUser();
     const body = (await req.json().catch(() => null)) as
