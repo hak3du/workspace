@@ -84,3 +84,10 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Caveat:** This is a safer default, not a production migration strategy. Use reviewed migrations for production and never point a destructive schema operation at a live database without backup and review.
 - **Status:** Script guardrail committed; behavior not runtime-tested.
 
+### ERR-006 — Health endpoint could not distinguish Turso secrets from an active adapter
+- **Observed:** The health endpoint previously checked only whether `DATABASE_URL` existed. If the user configured `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` without `DATABASE_URL`, the response reported only a generic missing database configuration.
+- **Change:** Commit `7d0cfbc` reports `adapter-not-configured` when Turso environment variables exist but the app has no `DATABASE_URL`; when a database URL is present, the endpoint reports reachability only after `SELECT 1` succeeds. The response never returns secrets.
+- **Important limitation:** This is diagnostic clarity, not a Turso integration. The Prisma client and schema have not yet been switched to a libSQL adapter; environment variables alone still do not establish a Turso connection.
+- **Verification:** Source change committed. Typecheck, tests, and deployed endpoint checks have not run; GitHub Actions is still billing-locked.
+- **Status:** Code change committed; runtime verification pending.
+
