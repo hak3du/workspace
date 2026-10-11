@@ -135,3 +135,17 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Change:** Commit `39b1211` changes the refresh button to the supported `ghost` variant and preserves its translucent appearance with utility classes.
 - **Verification:** The source change is committed to the feature branch. No local typecheck or Vercel rebuild has yet confirmed the fix; further type errors may surface after this one is resolved.
 - **Status:** Targeted source fix committed; Preview rebuild required.
+
+### ERR-013 — Preview runtime has no configured database
+- **Observed:** The deployed `/api/health` response reports `database: not-configured` and `databaseProvider: prisma-sqlite`. The deployed `/api/marketplace/status` response reports `prismaUrlConfigured: false`, `tursoVariablesPresent: false`, and `tursoAdapterImplemented: false`.
+- **Confirmed from source:** `prisma/schema.prisma` uses the SQLite provider and `env("DATABASE_URL")`; `src/lib/db.ts` creates a plain PrismaClient and does not configure a libSQL/Turso adapter.
+- **Impact:** Marketplace status queries cannot read token/trade counts. Environment configuration alone cannot make the current Prisma client connect to the existing Turso database.
+- **Required:** Implement a compatible Prisma 6 libSQL adapter integration, update and regenerate the Bun lockfile using Bun, apply a reviewed schema/migration strategy to Turso, then verify real remote reads and writes on Preview. Do not substitute an ephemeral local SQLite file for persistent production storage.
+- **Status:** Runtime failure confirmed; Turso integration and persistence verification remain open.
+
+### ERR-014 — AHE self-test is blocked by persistence dependency
+- **Observed:** Deployed `GET /api/ahe/selftest` returns HTTP 500 with `Self-test run failed`.
+- **Confirmed from source:** `src/lib/ahe.ts` implements `masterSecret()` by querying/creating the `Config` model through Prisma. The self-test calls encryption, which calls key derivation and therefore `masterSecret()`. With the Preview's database unconfigured, the self-test cannot complete its normal flow.
+- **Not yet confirmed:** The precise thrown runtime exception; the route currently logs the underlying exception server-side and returns a generic message. No conclusion is made that the cryptographic round-trip or tamper detection is defective.
+- **Required:** Restore a working database connection, rerun the self-test, and inspect the returned individual test results. If it still fails, correlate the timestamp with Vercel Function Logs using the route's server-side error.
+- **Status:** Failure observed; database is a source-supported likely cause; crypto test outcome remains unverified.
