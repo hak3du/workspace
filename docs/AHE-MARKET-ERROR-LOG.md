@@ -64,3 +64,11 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Required follow-up:** Configure production deployments deliberately; add an explicit demo-preview deployment setting, clear UI labels distinguishing demo from live state, and only enable real transactions after wallet signing, supported Pump.fun/Solana operations, fee accounting, confirmation and reconciliation are implemented and verified.
 - **Verification:** Source committed; automated tests and deployed behavior not yet verified because GitHub Actions remains billing-locked.
 - **Status:** Policy change committed; runtime verification pending.
+
+### ARCH-002 — Explicit contracts for production integrations
+- **Change:** Commit `ee7cf98` adds `src/lib/marketplace/adapters/types.ts` with typed boundaries for wallet signing, Solana transaction submission/status reconciliation, Pump.fun launches, fee settlement, and AHE verification.
+- **Safety properties:** The contracts distinguish transaction lifecycle states, use operation IDs for idempotency/reconciliation, represent fee amounts as integer lamports, and keep wallet identity separate from secret key material. AHE verification accepts an opaque proof reference rather than trusting a client-supplied boolean.
+- **Limitations:** These are interfaces only; no provider is connected and no real transaction can be submitted through them. `unknown[]` instructions are an integration seam, not a validation guarantee. Concrete implementations must validate instructions, signer sets, cluster, amounts, addresses, and replay/idempotency behavior.
+- **Verification:** File committed. Typecheck/build and integration tests have not run because GitHub Actions remains blocked by the account billing lock.
+- **Status:** Contract layer added; implementations and verification pending.
+
