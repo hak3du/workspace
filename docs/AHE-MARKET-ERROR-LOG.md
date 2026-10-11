@@ -72,3 +72,15 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Verification:** File committed. Typecheck/build and integration tests have not run because GitHub Actions remains blocked by the account billing lock.
 - **Status:** Contract layer added; implementations and verification pending.
 
+### SEC-001 — Production build previously ignored TypeScript errors
+- **Observed:** `next.config.ts` set `typescript.ignoreBuildErrors: true`, allowing a production build to proceed without Next.js enforcing its TypeScript check.
+- **Change:** Commit `60b9cfa` removes this override. Production builds should now fail rather than silently bypass the framework's TypeScript validation.
+- **Impact / caveat:** Existing type errors, if any, may now block deployment and must be fixed explicitly. No build has run yet, so the repository's current typecheck status is unknown.
+- **Status:** Guardrail committed; build verification pending.
+
+### SEC-002 — Database push script accepted data loss
+- **Observed:** The `db:push` package script included `--accept-data-loss`, suppressing Prisma's normal protection against schema changes that could lose data.
+- **Change:** Commit `b767b6d` removes that flag. The script now runs `prisma db push` and can stop for review when Prisma detects a destructive change.
+- **Caveat:** This is a safer default, not a production migration strategy. Use reviewed migrations for production and never point a destructive schema operation at a live database without backup and review.
+- **Status:** Script guardrail committed; behavior not runtime-tested.
+
