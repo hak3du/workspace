@@ -13,7 +13,10 @@ implemented and reviewed.
 
 ## Required environment
 
-- `AHE_MARKET_MODE=simulation|devnet|mainnet` (defaults to `simulation`)
+The current application does not yet connect Prisma to Turso. `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` are not sufficient by themselves; the libSQL adapter, compatible dependency lockfile, and migration path remain to be implemented and verified. Do not treat the existing SQLite URL as durable hosted storage.
+
+
+- `AHE_MARKET_MODE=simulation|devnet|mainnet` (defaults to `mainnet`; set `simulation` only for an explicitly labelled demo)
 - `SOLANA_RPC_URL` (server-side RPC endpoint; never expose private credentials)
 - `NEXT_PUBLIC_SOLANA_CLUSTER=devnet|mainnet-beta` (only when the wallet UI is wired)
 - A production database URL after migrating Prisma from SQLite to PostgreSQL
