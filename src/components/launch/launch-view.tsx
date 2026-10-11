@@ -28,6 +28,18 @@ import { TokenCard } from "@/components/launch/token-card";
 
 type Tab = "terminal" | "following" | "created";
 type Sort = "new" | "progress" | "mcap" | "trades";
+type MarketplaceStatus = {
+  dataSource: "database";
+  environment: "simulation";
+  counts: { tokens: number; trades: number };
+  integrations: {
+    wallet: string;
+    solana: string;
+    pumpFun: string;
+    aheVerification: string;
+  };
+  checkedAt: string;
+};
 
 const RULES = [
   {
@@ -61,8 +73,27 @@ export function LaunchView() {
   const [debounced, setDebounced] = useState("");
   const [sort, setSort] = useState<Sort>("new");
   const [tokens, setTokens] = useState<TokenDTO[]>([]);
+  const [marketplaceStatus, setMarketplaceStatus] = useState<MarketplaceStatus | null>(null);
+  const [statusUnavailable, setStatusUnavailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+
+  // Load the marketplace capability contract separately from token listings.
+  // The UI must never infer that wallet/chain/launch integrations are live.
+  useEffect(() => {
+    let cancelled = false;
+    api<MarketplaceStatus>("/api/marketplace/status")
+      .then((status) => {
+        if (!cancelled) {
+          setMarketplaceStatus(status);
+          setStatusUnavailable(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStatusUnavailable(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // Debounce search input (300ms).
   useEffect(() => {
@@ -114,12 +145,17 @@ export function LaunchView() {
         <div className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-violet-600/25 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-28 -left-10 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
         <div className="relative max-w-2xl">
-          <Badge className="border-violet-400/40 bg-violet-500/20 text-violet-200">Launch Arena</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="border-violet-400/40 bg-violet-500/20 text-violet-200">AHE Market</Badge>
+            <Badge variant="outline" className="border-amber-400/40 text-amber-200">
+              {statusUnavailable ? "Status unavailable" : marketplaceStatus ? "Simulation · database-backed" : "Checking environment…"}
+            </Badge>
+          </div>
           <h1 className="display-2 mt-4">
-            Create, Trade, and Dominate the <span className="text-gradient">Memecoin Universe!</span>
+            Discover Tokens. Verify Provenance. <span className="text-gradient">Build with AHE.</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Launch your token in seconds. Transparent 0.02 SOL launch fee. 1% disclosed trade fee on the simulated route.
+            Explore database-backed token listings and marketplace activity. Wallet, Pump.fun launches, and AHE attestations are not connected yet; launch and trade figures remain simulation-only.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button className="glow-violet h-11" onClick={() => setCreateOpen(true)}>
@@ -225,11 +261,13 @@ export function LaunchView() {
       ) : tokens.length === 0 ? (
         <div className="glass space-y-3 rounded-2xl p-10 text-center">
           <Rocket className="mx-auto size-8 text-violet-400" />
-          <h3 className="font-bold">{tab === "created" ? "You haven't launched anything yet" : "No tokens match your search"}</h3>
+          <h3 className="font-bold">{tab === "created" ? "You haven't launched anything yet" : tab === "following" ? "Following feed is not available yet" : "No tokens match your search"}</h3>
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">
             {tab === "created"
-              ? "Your launches will appear here the moment they go live on the bonding curve."
-              : "Try a different search, or be the one who fills the void."}
+              ? "Your launches will appear here. Current launches are simulated and do not create real Solana tokens."
+              : tab === "following"
+                ? "Follow relationships are not implemented yet. We will show this feed only when it can be populated from real follow data."
+                : "Try a different search, or be the one who fills the void."}
           </p>
           <Button className="glow-violet mx-auto h-11" onClick={() => setCreateOpen(true)}>
             <Rocket className="size-4" />
