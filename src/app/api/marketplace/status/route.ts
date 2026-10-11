@@ -5,20 +5,27 @@ import { getMarketplaceReadiness } from "@/lib/marketplace/config";
 export const dynamic = "force-dynamic";
 
 /**
- * Operational status. This endpoint reports configured/implemented capability,
- * not just environment variables. Mainnet readiness stays false until the
- * actual wallet and Pump.fun transaction adapter has been implemented.
+ * Operational status reports actual DB availability and implemented capability.
+ * Mainnet readiness stays false until wallet and Pump.fun transaction flows exist.
  */
 export async function GET() {
+  const readiness = getMarketplaceReadiness();
+  const databaseConfiguration = {
+    prismaUrlConfigured: Boolean(process.env.DATABASE_URL),
+    tursoVariablesPresent: Boolean(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN),
+    tursoAdapterImplemented: false,
+  };
+
   try {
     const [tokenCount, tradeCount] = await Promise.all([
       db.token.count(),
       db.trade.count(),
     ]);
-    const readiness = getMarketplaceReadiness();
 
     return NextResponse.json({
-      dataSource: "database",
+      status: "ok",
+      dataSource: "prisma-database",
+      databaseConfiguration,
       environment: readiness.mode,
       launchesEnabled: readiness.launchesEnabled,
       realTransactionsEnabled: readiness.realTransactionsEnabled,
@@ -29,14 +36,24 @@ export async function GET() {
         solana: readiness.integrations.solanaRpc,
       },
       checkedAt: new Date().toISOString(),
+    }, { headers: { "Cache-Control": "no-store" } });
+  } catch (err) {
+    const errorId = crypto.randomUUID();
+    console.error("marketplace status error", { errorId, err });
+    return NextResponse.json({
+      status: "unavailable",
+      error: "Marketplace status is temporarily unavailable",
+      code: "MARKETPLACE_STATUS_UNAVAILABLE",
+      errorId,
+      databaseConfiguration,
+      environment: readiness.mode,
+      launchesEnabled: false,
+      realTransactionsEnabled: false,
+      productionReady: false,
+      checkedAt: new Date().toISOString(),
     }, {
+      status: 503,
       headers: { "Cache-Control": "no-store" },
     });
-  } catch (err) {
-    console.error("marketplace status error", err);
-    return NextResponse.json(
-      { error: "Marketplace status is temporarily unavailable" },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
   }
 }
