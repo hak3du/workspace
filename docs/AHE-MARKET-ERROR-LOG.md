@@ -99,3 +99,11 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Verification:** Source/documentation changes committed. Deployment logs and a successful redeploy have not been verified.
 - **Status:** Open; root cause unknown.
 
+
+### ERR-008 — Successful Vercel build does not validate TypeScript or the feature branch
+- **Observed:** User-provided Vercel log for a deployment of `main` at commit `fb6f9d9` shows dependency installation completed, Next.js compilation succeeded, all listed routes were generated, and deployment completed successfully.
+- **Correction to ERR-007:** This is evidence of a successful deployment for that specific main-branch commit; the earlier deployment error was not reproduced in the supplied log. Do not assume the earlier error's root cause is identified.
+- **Validation caveat:** The build output explicitly says `Skipping validation of types`. Therefore, the successful build does not establish TypeScript correctness. It also does not establish database connectivity, Turso persistence, authentication correctness, AHE endpoint behavior, or live marketplace readiness.
+- **Branch caveat:** The deployed commit is `fb6f9d9` on `main`, while PR #2 head is `08d546e` on `feat/ahe-market-production-foundation`. The supplied log does not prove that the PR branch changes are deployed.
+- **Next verification:** Confirm the deployment's Git commit and branch in Vercel; restore/run an explicit TypeScript check (for example `bun run typecheck` if configured) and test deployed health/status endpoints. Turso integration and real transaction gates remain open.
+- **Status:** Successful deployment observed for the logged main commit; feature branch and runtime behavior unverified.
