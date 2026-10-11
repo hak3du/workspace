@@ -7,15 +7,17 @@
  * existing simulated mint/signature code from being used as a real launch.
  */
 
-export type MarketMode = "simulation" | "devnet" | "mainnet";
+export type MarketMode = "simulation" | "devnet" | "mainnet" | "invalid";
 
 const VALID_MODES: readonly MarketMode[] = ["simulation", "devnet", "mainnet"];
 
 export function getMarketMode(): MarketMode {
-  const value = (process.env.AHE_MARKET_MODE || "simulation").toLowerCase();
-  return VALID_MODES.includes(value as MarketMode)
-    ? (value as MarketMode)
-    : "simulation";
+  const configured = process.env.AHE_MARKET_MODE;
+  if (!configured) return "simulation";
+  const value = configured.toLowerCase();
+  return VALID_MODES.includes(value as Exclude<MarketMode, "invalid">)
+    ? (value as Exclude<MarketMode, "invalid">)
+    : "invalid";
 }
 
 /** True only for the legacy, explicitly simulated marketplace. */
