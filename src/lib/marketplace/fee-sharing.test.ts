@@ -51,4 +51,33 @@ describe("validateFeeShares", () => {
       shareBps: 1,
     }))).valid).toBe(false);
   });
+  test("accepts the maximum of ten unique recipients when shares total 100%", () => {
+    const addresses = "123456789a".split("").map((suffix) => ({
+      address: `1111111111111111111111111111111${suffix}`,
+      shareBps: 1_000,
+    }));
+    const result = validateFeeShares(addresses);
+    expect(result.valid).toBe(true);
+    expect(result.shares).toHaveLength(10);
+    expect(result.totalBps).toBe(10_000);
+  });
+
+  test("rejects malformed recipient entries without throwing", () => {
+    const result = validateFeeShares([null, "not-an-object", 42]);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(3);
+    expect(result.totalBps).toBe(0);
+    expect(result.shares).toEqual([]);
+  });
+
+  test("trims recipient addresses and bounds optional labels", () => {
+    const label = "A".repeat(100);
+    const result = validateFeeShares([
+      { address: ` ${creator} `, shareBps: 10_000, label: ` ${label} ` },
+    ]);
+    expect(result.valid).toBe(true);
+    expect(result.shares[0]?.address).toBe(creator);
+    expect(result.shares[0]?.label).toHaveLength(80);
+  });
+
 });
