@@ -44,4 +44,19 @@ describe("AHE Market runtime guard", () => {
     expect(readiness.integrations.solanaRpc).toBe("configured");
     expect(readiness.integrations.pumpFun).toBe("not-implemented");
   });
+  test("normalizes mode casing and keeps simulated transactions explicitly simulated", () => {
+    process.env.AHE_MARKET_MODE = "SIMULATION";
+    const readiness = getMarketplaceReadiness();
+    expect(readiness.mode).toBe("simulation");
+    expect(readiness.launchesEnabled).toBe(true);
+    expect(readiness.realTransactionsEnabled).toBe(false);
+    expect(readiness.productionReady).toBe(false);
+  });
+
+  test("does not infer RPC connectivity when no RPC URL is configured", () => {
+    process.env.AHE_MARKET_MODE = "devnet";
+    delete process.env.SOLANA_RPC_URL;
+    expect(getMarketplaceReadiness().integrations.solanaRpc).toBe("not-configured");
+  });
+
 });
