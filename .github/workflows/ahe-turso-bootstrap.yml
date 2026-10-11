@@ -1,0 +1,54 @@
+name: One-time Turso adapter and schema bootstrap
+
+on:
+  push:
+    branches: ["feat/ahe-market-production-foundation"]
+
+permissions:
+  contents: write
+
+jobs:
+  update-lock-and-schema:
+    if: contains(github.event.head_commit.message, 'turso bootstrap') == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: file:./ci.db
+      AHE_MARKET_MODE: simulation
+      NEXTAUTH_SECRET: ci-only-not-a-production-secret
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/ahe-market-production-foundation
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.3"
+
+      - name: Resolve adapter dependencies and generate lockfile
+        run: |
+          bun add @prisma/adapter-libsql@6.19.2 @libsql/client
+          bun run db:generate
+          bunx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/turso-schema.sql
+          node -e "const fs=require('fs'); let s=fs.readFileSync('/tmp/turso-schema.sql','utf8'); s=s.split('\\n').filter(line=>!/^\\s*(PRAGMA|BEGIN TRANSACTION|COMMIT;)/i.test(line)).join('\\n'); fs.writeFileSync('src/lib/turso-schema.ts','// Generated from prisma/schema.prisma. Do not edit manually.\\nexport const TURSO_SCHEMA_SQL = '+JSON.stringify(s)+';\\n')"
+
+      - name: Commit dependency lock and generated Turso schema
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json bun.lock src/lib/turso-schema.ts
+          git rm .github/workflows/ahe-turso-bootstrap.yml
+          git commit -m "chore: turso bootstrap dependency lock"
+          git push origin HEAD:feat/ahe-market-production-foundation
+
+      - name: Verify tests and production build
+        run: |
+          bun run db:generate
+          bun test
+          bun run typecheck
+          bun run lint
+          bun run build
