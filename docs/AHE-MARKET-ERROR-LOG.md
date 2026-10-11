@@ -48,3 +48,11 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Change:** Replaced both sequences with Prisma `upsert` operations. This makes initialization a single database operation and avoids the known read-then-create race on supported database providers.
 - **Verification:** Source change committed as `94565b7`; automated tests and live concurrency verification have not run because GitHub Actions is billing-locked.
 - **Status:** Code change committed; runtime verification pending.
+
+
+### ERR-005 — Token API accepted ambiguous filters and unchecked image URLs (source review)
+- **Observed:** The token feed treated unknown sort values as the progress sort and did not validate unknown tabs or cap search-query length. Token launch accepted any non-empty image URL string without checking URL syntax or protocol.
+- **Change:** Commit `94edfc3` rejects unsupported sort/tab values, caps search input at 80 characters, and validates launch image URLs as valid HTTP(S) URLs with a 2,048-character limit.
+- **Impact:** Invalid client input now receives HTTP 400 instead of being silently interpreted or stored. This validates URL format/protocol only; it does not guarantee that the remote image exists or is trustworthy.
+- **Verification:** Source committed; automated tests and deployed endpoint checks remain blocked/pending because GitHub Actions is billing-locked.
+- **Status:** Code change committed; runtime verification pending.
