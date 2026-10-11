@@ -41,3 +41,10 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - [ ] Verify `/api/health` and `/api/marketplace/status` on deployed preview.
 - [ ] Create a simulated record, reload, and verify it persists in Turso.
 - [ ] Keep real blockchain transaction gates closed until wallet signing, fee sharing, confirmation, and settlement are tested.
+
+
+### ERR-004 — Concurrent demo-user initialization race (preventive fix)
+- **Observed in source review:** `getSessionUser()` and `ensureUserByHandle()` previously performed a read-then-create sequence for unique user handles. Concurrent first requests could both observe no row, then one create could fail on the unique constraint.
+- **Change:** Replaced both sequences with Prisma `upsert` operations. This makes initialization a single database operation and avoids the known read-then-create race on supported database providers.
+- **Verification:** Source change committed as `94565b7`; automated tests and live concurrency verification have not run because GitHub Actions is billing-locked.
+- **Status:** Code change committed; runtime verification pending.
