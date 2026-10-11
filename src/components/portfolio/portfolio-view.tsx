@@ -74,7 +74,7 @@ export function PortfolioView() {
           <h1 className="display-2">Portfolio &amp; card</h1>
           <p className="mt-1 text-sm text-muted-foreground">Your holdings, activity and wallet security — all simulated, all yours.</p>
         </div>
-        <Button variant="glass" className="h-11 rounded-xl border-white/10 bg-white/5" onClick={load} aria-label="Refresh portfolio">
+        <Button variant="ghost" className="h-11 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10" onClick={load} aria-label="Refresh portfolio">
           <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} /> Refresh
         </Button>
       </div>
