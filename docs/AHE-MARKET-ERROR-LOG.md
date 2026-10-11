@@ -56,3 +56,11 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Impact:** Invalid client input now receives HTTP 400 instead of being silently interpreted or stored. This validates URL format/protocol only; it does not guarantee that the remote image exists or is trustworthy.
 - **Verification:** Source committed; automated tests and deployed endpoint checks remain blocked/pending because GitHub Actions is billing-locked.
 - **Status:** Code change committed; runtime verification pending.
+
+
+### ARCH-001 — Production-first mode policy
+- **Decision:** AHE Market's default target is production. Simulation is an explicit opt-in for customer previews and must not be selected implicitly when deployment configuration is missing.
+- **Change:** Commit `322814a` changes `getMarketMode()` to default to `mainnet` rather than `simulation`. This does **not** enable real transactions: the Pump.fun adapter remains hard-coded unavailable, so launch/trade mutations fail closed outside explicit simulation mode.
+- **Required follow-up:** Configure production deployments deliberately; add an explicit demo-preview deployment setting, clear UI labels distinguishing demo from live state, and only enable real transactions after wallet signing, supported Pump.fun/Solana operations, fee accounting, confirmation and reconciliation are implemented and verified.
+- **Verification:** Source committed; automated tests and deployed behavior not yet verified because GitHub Actions remains billing-locked.
+- **Status:** Policy change committed; runtime verification pending.
