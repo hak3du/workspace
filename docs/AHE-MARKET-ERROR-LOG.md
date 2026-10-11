@@ -120,3 +120,12 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Not yet confirmed:** The precise failure reason for this run. It resembles the previously recorded Actions billing-lock failure (ERR-001), but this run's error message was not retrievable, so the billing lock is not asserted as confirmed cause.
 - **Impact:** No typecheck, tests, lint, or build result can be inferred from this run.
 - **Status:** Open; runner-level failure details unavailable.
+
+
+### ERR-011 — Vercel TypeScript build blocked by standalone WebSocket example dependencies
+- **Observed:** User-provided Vercel Preview log for branch `feat/ahe-market-production-foundation`, commit `2d752b9`, shows Next.js compilation succeeded, then TypeScript failed at `examples/websocket/frontend.tsx:4`: cannot find module `socket.io-client` or its corresponding type declarations.
+- **Confirmed from repository:** `package.json` does not declare `socket.io-client`; `bun.lock` does not contain it. The standalone `examples/websocket/server.ts` also imports `socket.io`, which is not declared. The `examples/websocket` files are examples rather than app routes.
+- **Change:** Excluded the standalone `examples/` directory from the app's TypeScript project in `tsconfig.json`. This avoids adding unrelated WebSocket server/client dependencies to the production app solely to type-check a standalone example.
+- **Scope:** This does not install dependencies, run, or validate the WebSocket example. If the example is intended to be runnable, it needs its own dependency manifest/workspace and lockfile-managed dependencies.
+- **Verification:** Change committed to the feature branch through GitHub's file update API. Vercel must rebuild the PR preview to determine whether further type errors remain; no successful build is claimed yet.
+- **Status:** Targeted source fix committed; preview rebuild pending.
