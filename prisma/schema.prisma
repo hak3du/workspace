@@ -1,0 +1,277 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: SQLite has no enums — kind/status fields are strings validated in code.
+
+model User {
+  id           String   @id @default(cuid())
+  handle       String   @unique // "@nova"
+  displayName  String
+  avatarEmoji  String   @default("🛸")
+  avatarColor  String   @default("#8b5cf6")
+  bio          String   @default("")
+  role         String   @default("EXPLORER") // EXPLORER | CREATOR | DEVELOPER | ADMIN
+  verified     Boolean  @default(false)
+  followers    Int      @default(0)
+  createdAt    DateTime @default(now())
+  posts        Post[]
+  tokens       Token[]
+  spacesOwned  Space[]
+  memberships  SpaceMembership[]
+  trades       Trade[]
+  holdings     Holding[]
+  spaceMessages SpaceMessage[]
+  comments     Comment[]
+  reactions    Reaction[]
+  apiKeys      ApiKey[]
+  wallets      Wallet[]
+  notifications Notification[]
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String
+  address   String   @unique
+  provider  String   @default("Simulated Phantom") // Phantom | Solflare (simulated)
+  verified  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Space {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String   @default("")
+  category    String   @default("ARENA") // ARENA | GAMING | MUSIC | AI | CYBERSEC | ART | STARTUP | EDU
+  iconEmoji   String   @default("🚀")
+  gradient    String   @default("from-violet-600 to-cyan-500")
+  visibility  String   @default("PUBLIC") // PUBLIC | PRIVATE
+  ownerId     String
+  memberCount Int      @default(1)
+  onlineCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  owner       User     @relation(fields: [ownerId], references: [id])
+  posts       Post[]
+  memberships SpaceMembership[]
+  messages    SpaceMessage[]
+  events      SpaceEvent[]
+}
+
+model SpaceMembership {
+  id        String   @id @default(cuid())
+  spaceId   String
+  userId    String
+  role      String   @default("MEMBER") // OWNER | MOD | MEMBER
+  createdAt DateTime @default(now())
+  space     Space    @relation(fields: [spaceId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([spaceId, userId])
+}
+
+model SpaceEvent {
+  id        String   @id @default(cuid())
+  spaceId   String
+  title     String
+  kind      String   @default("LIVE") // LIVE | STREAM | MILESTONE | RELEASE
+  startsAt  DateTime @default(now())
+  space     Space    @relation(fields: [spaceId], references: [id])
+}
+
+model SpaceMessage {
+  id        String   @id @default(cuid())
+  spaceId   String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+  space     Space    @relation(fields: [spaceId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id           String   @id @default(cuid())
+  authorId     String
+  spaceId      String?
+  type         String   @default("IMAGE") // VIDEO | IMAGE | ARTICLE | AUDIO | UPDATE | CODE
+  title        String
+  body         String   @default("")
+  mediaUrl     String?
+  thumbUrl     String?
+  durationLabel String?
+  tags         String   @default("[]") // JSON array string
+  visibility   String   @default("PUBLIC")
+  viewCount    Int      @default(0)
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  saveCount    Int      @default(0)
+  isLive       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  author       User     @relation(fields: [authorId], references: [id])
+  space        Space?   @relation(fields: [spaceId], references: [id])
+  comments     Comment[]
+  reactions    Reaction[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  kind      String   @default("LIKE") // LIKE | SAVE
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId, kind])
+}
+
+// ------- Launch Arena -------
+
+model Token {
+  id            String   @id @default(cuid())
+  name          String
+  symbol        String
+  description   String   @default("")
+  imageUrl      String?
+  mint          String   @unique // simulated Solana mint (base58)
+  creatorId     String
+  status        String   @default("BONDING") // BONDING | MIGRATED
+  // bonding curve virtual reserves
+  virtualSol    Float    @default(30)
+  virtualToken  Float    @default(1000000000)
+  launchFeeSol  Float    @default(0.02)
+  tradeCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  lastTradeAt   DateTime @default(now())
+  creator       User     @relation(fields: [creatorId], references: [id])
+  trades        Trade[]
+  holdings      Holding[]
+  fees          FeeRecord[]
+  checks        VerificationCheck[]
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  tokenId     String
+  userId      String?
+  side        String // BUY | SELL
+  solAmount   Float
+  tokenAmount Float
+  priceAfter  Float // SOL per token
+  traderLabel String   @default("you")
+  isBot       Boolean  @default(false)
+  txSig       String // simulated signature
+  createdAt   DateTime @default(now())
+  token       Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model Holding {
+  id        String @id @default(cuid())
+  tokenId   String
+  userId    String
+  amount    Float  @default(0)
+  avgPrice  Float  @default(0)
+  token     Token  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user      User   @relation(fields: [userId], references: [id])
+
+  @@unique([tokenId, userId])
+}
+
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  kind      String // TRADE | LAUNCH | FOLLOW | JOIN | MILESTONE | GRADUATE
+  title     String
+  meta      String   @default("{}") // JSON
+  tokenId   String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @default("SYSTEM") // SYSTEM | TRADE | SOCIAL | SECURITY | LAUNCH
+  title     String
+  body      String   @default("")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model FeeRecord {
+  id         String   @id @default(cuid())
+  ref        String   @unique // idempotency key
+  tokenId    String?
+  kind       String   @default("LAUNCH_FEE") // LAUNCH_FEE | TRADE_FEE
+  quotedSol  Float
+  settledSol Float    @default(0)
+  status     String   @default("CONFIRMED") // QUOTED | SUBMITTED | CONFIRMED | REFUNDED
+  txSig      String   @default("")
+  createdAt  DateTime @default(now())
+  settledAt  DateTime?
+  token      Token?   @relation(fields: [tokenId], references: [id])
+}
+
+// ------- Quantum Labs / AHE -------
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  label       String
+  prefix      String // public prefix, e.g. ahe_live_9f2k
+  keyHash     String // sha256 of full secret
+  fullKeyOnce String? // returned exactly once at creation
+  environment String   @default("SANDBOX") // SANDBOX | PRODUCTION
+  plan        String   @default("FREE") // FREE | PRO | ENTERPRISE
+  quota       Int      @default(1000)
+  used        Int      @default(0)
+  revoked     Boolean  @default(false)
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  usageEvents ApiUsageEvent[]
+}
+
+model ApiUsageEvent {
+  id        String   @id @default(cuid())
+  keyId     String
+  endpoint  String
+  status    String   @default("OK") // OK | ERROR
+  latencyMs Int      @default(0)
+  createdAt DateTime @default(now())
+  apiKey    ApiKey   @relation(fields: [keyId], references: [id], onDelete: Cascade)
+}
+
+model VerificationCheck {
+  id        String   @id @default(cuid())
+  projectId String // tokenId or project slug
+  name      String
+  status    String   @default("UNAVAILABLE") // PASS | WARN | FAIL | UNAVAILABLE
+  detail    String   @default("")
+  source    String   @default("quantum-launchpad/internal")
+  checkedAt DateTime @default(now())
+  token     Token?   @relation(fields: [projectId], references: [id])
+}
+
+model Config {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. ahe_master_secret (never exposed)
+  value     String
+  updatedAt DateTime @default(now())
+}

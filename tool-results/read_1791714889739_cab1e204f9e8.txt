@@ -1,0 +1,854 @@
+     1→# QUANTUM LAUNCHPAD V2.5
+     2→
+     3→## The complete product specification — from the first screen to the underlying infrastructure
+     4→
+     5→[Cover Song Monetization \[2026\]: Earn Royalties on YouTube](https://images.openai.com/static-rsc-4/jML3SQupQYpHX2os4E2zps07R2mWsmVHzWSr164j2ksuvrx-oSTEj22uRltdowBbvj9zwu0b9_t3jSuILEDxNs22PYcOBQOYsGGd2gyUOgxYCbDxAabLJuYgvXy3yfhDvhE1IwmjuRsGwh4vumiYeblVTTp5XDrChdDhaIWpdqY?purpose=inline)
+     6→
+     7→[fluxnote.io](https://fluxnote.io/guides/youtube-cover-songs-monetization-2026)
+     8→
+     9→Quantum Launchpad V2.5 is a media-first digital universe where people discover content, create their own worlds, build communities, launch digital assets, connect crypto wallets, and access post-quantum cryptographic technology through one integrated platform.
+    10→
+    11→It is not simply a cryptocurrency launchpad. It is not just another social network. And it is not a cryptography dashboard.
+    12→
+    13→It is a connected ecosystem combining five products:
+    14→
+    15→- A modern digital media and social platform.
+    16→- A creator and community economy.
+    17→- A Solana-based digital asset launchpad.
+    18→- A developer and cryptographic technology platform.
+    19→- An AHE-powered security and post-quantum research ecosystem.
+    20→
+    21→The entire experience should feel like one coherent, premium product. A user should be able to enter without a crypto wallet, discover something interesting, join a community, watch a video, meet collaborators, explore a project, and connect a wallet only when they want to perform a wallet-dependent action.
+    22→
+    23→Below is the full V2.5 specification, covering the visual design, every major user-facing area, application behavior, financial infrastructure, AHE, post-quantum integrations, security, monetization, administration, and deployment.
+    24→
+    25→# 1. The experience at a glance
+    26→
+    27→[Telecom’s next wave of innovation: are you ready?](https://images.openai.com/static-rsc-4/bIAW5WAPUDPa4lvUxt_H-hfXPw_isok7TMrp1lDofvIARjEm7K7Lm-ubjNk4lhRo_qjOvop-9-Wpty77dhxDCuldAKrCpa25Z0XFBE0hlW_WSW2jtbl9PSUsqBc7RS9z7ajIeapDzKxdRDiWw5fT0oivAuk-nHUO6gcGLdllIkY?purpose=inline)
+    28→
+    29→### DISCOVER
+    30→
+    31→Explore the world's media, creators, communities, technology, and new launches.
+    32→
+    33→[Meta AI Image Generator Alternative | Dreamina AI Image Generator](https://images.openai.com/static-rsc-4/O8ShYQxt7cbRV1FKh_oW0SVSDZxKa4RmR9rytreYLtrAt4FLDA8Ul9rAunvAhtUvYKCitkxkarnBn2cq7KFjMP_dGaujaZFuzslD_2Vqhmi7ClgYh56UDjZQexL4EBLtScXSdUIv9NmNq3rAycVdH7G8ZWznbQRDZHETCdjEItk?purpose=inline)
+    34→
+    35→### CREATE
+    36→
+    37→Publish media, customize a personal profile, establish a project, and build an audience.
+    38→
+    39→[Virtual Hangouts: The Rise of Online Communities | by Future's Bright Collective | Medium](https://images.openai.com/static-rsc-4/w0SPY9F-4gTEuNGCd3v9Ez7nGScJolvqkGm1YfwqJ4FLNwa2EOi1iXn_vflwQg_M3f7bTO_Gve9aw6edPMJodMX8m7L98TnbwOlH_U4CdCvReZjMop715_XFkpsT5VUPK7pEgD_jVlLhyB5iY-b2YZMkIFXtbLBFH7sqUympA2U?purpose=inline)
+    40→
+    41→### CONNECT
+    42→
+    43→Join spaces, chat, follow creators, collaborate, and participate in live events.
+    44→
+    45→[Memecoin Launchpad – Fun Meets Finance by Imran Hossen on Dribbble](https://images.openai.com/static-rsc-4/gQEQCxh1Ox-zqdLc7IevuUXTafjPo2swJZ0Go3eFxPQrL9h5KzNHJo2KHDcNEkUuUX7ARHo1CqAhTcKxFxWhCl-Jt1MCY5o0vZcrNKSfId6KN3FsFEiWSGKzUc8icrLoT7MCOnJ6BC2HGFBVIjOOLnWnr30HI5Mu0doNNQOMc_I?purpose=inline)
+    46→
+    47→### LAUNCH
+    48→
+    49→Create eligible Solana projects, review transparent fees, sign transactions, and verify results.
+    50→
+    51→[Sectigo launches post-quantum cryptography testing labs](https://images.openai.com/static-rsc-4/siF9uJS3Gi7h-zw2T64mNcxOpmNviQBKNWGuRLSBNQ8f0zh0GXAW8UIPfoxe1IkPOoavlJkt8vklubjODZIOk-jZkDaYsBvHNBPgDCdCFTP34_m2F3x--T5wXn96Kk8a-m5BM04Diui3tcUBgT2jTBCIjSWiKPabA5xEUBQ1x4U?purpose=inline)
+    52→
+    53→### BUILD
+    54→
+    55→Integrate AHE, explore post-quantum technology, connect GitHub, and build with APIs and SDKs.
+    56→
+    57→These are connected destinations, not separate applications. A creator's profile can lead to their media, community, GitHub repository, project documentation, launch page, and verified on-chain activity.
+    58→
+    59→# 2. The design philosophy
+    60→
+    61→[Higgsfield AI Review 2026](https://images.openai.com/static-rsc-4/Wu1qKndLIF0AIsk_CeB0XVy_e6Dy87ibDGRNfpyihj4NyCsBkPuJ_4ALL0Xe88x88kWKvvXMyIWINtjSkEUB2Tf96a6PPOvQKbglG-WT613gI6WEV1XHAdD61Y8QiVGOAiN5k1dUSgU_pFRcurY5_EVKYitU7pZYNPUnBlIGtbQ?purpose=inline)
+    62→
+    63→[fluxnote.io](https://fluxnote.io/guides/higgsfield-ai-review)
+    64→
+    65→The interface must immediately communicate that this is a serious, modern technology platform with a rich creative culture.
+    66→
+    67→## Visual identity
+    68→
+    69→| Element       | Design direction                                                                         |
+    70→| ------------- | ---------------------------------------------------------------------------------------- |
+    71→| Background    | Obsidian, graphite, and deep charcoal                                                    |
+    72→| Accent colors | Electric violet, cool cyan, selective indigo                                             |
+    73→| Typography    | Large editorial headings, highly readable body text, clear technical typography          |
+    74→| Surfaces      | Restrained glass effects, subtle borders, layered depth                                  |
+    75→| Media         | Large artwork, cinematic video, expansive galleries, wide project banners                |
+    76→| Motion        | Subtle transitions, fluid navigation, deliberate loading and status animations           |
+    77→| Charts        | Clear price, liquidity, volume, and activity visualizations                              |
+    78→| Feedback      | Immediate confirmation for saves, follows, uploads, wallet connections, and transactions |
+    79→
+    80→The design should be responsive from the beginning, with dedicated desktop, tablet, and mobile layouts.
+    81→
+    82→The media is the main event. Images and videos should not be confined to tiny cards. The platform needs wide hero surfaces, full project galleries, immersive profile banners, video players, live content, and spacious project pages.
+    83→
+    84→Crypto and security interfaces should remain precise and information-dense where necessary, but the rest of the product should feel approachable.
+    85→
+    86→## The application shell
+    87→
+    88→On desktop, the layout uses three adaptable regions:
+    89→
+    90→- Left navigation: primary destinations, followed spaces, saved items, and quick-create controls.
+    91→- Central workspace: the main media, community, project, or launch experience.
+    92→- Context panel: recommendations, community activity, launch status, wallet summary, or relevant project information.
+    93→
+    94→The right panel can collapse when users need more room for media.
+    95→
+    96→On mobile, the interface becomes a full-width experience with bottom navigation, compact contextual controls, touch-friendly cards, and wallet approval flows that work with supported mobile wallets.
+    97→
+    98→A persistent top bar contains global search, notifications, create, wallet connection, and the user's profile.
+    99→
+   100→# 3. The first visit: onboarding and identity
+   101→
+   102→[Landing Page For Village Roadshow WEB3 access by vino_costa for Roobinium on Dribbble](https://images.openai.com/static-rsc-4/ngDWtdXODwEdMBwxqYjEdayemc69IDG2SIIi8BckKGinkLjqW5WJznzPR-q2df26fMnz5QCmtgszRjZtvRJUrXF1anPdGoQZdQJjOkqacVGQQr77rkjzpfBSo0asOmJA2C7DPP_1d7szsHguRNQTLtgCw3QqCxHR_bGIBK2QDHw?purpose=inline)
+   103→
+   104→[dribbble.com](https://dribbble.com/shots/20299582-Landing-Page-For-Village-Roadshow-WEB3-access)
+   105→
+   106→A new visitor should understand the product in seconds.
+   107→
+   108→The landing page presents the universe, shows examples of what people can do, and provides clear routes into discovery, creation, and technology.
+   109→
+   110→## First-visit flow
+   111→
+   112→1. A visitor opens Quantum Launchpad.
+   113→2. They see a cinematic introduction, featured creators, interesting project worlds, and new launches.
+   114→3. They can explore public content without connecting a wallet.
+   115→4. When they want to follow, publish, join a private space, or save personalized content, they create an account or authenticate.
+   116→5. They optionally connect a Solana wallet.
+   117→6. They choose interests and discover relevant communities.
+   118→
+   119→Authentication and wallet connection must be separate concepts. A social account does not automatically establish wallet ownership, and a connected wallet does not automatically create a complete user profile.
+   120→
+   121→## Personal identity
+   122→
+   123→Each user can have:
+   124→
+   125→- Username, display name, avatar, and cover image.
+   126→- Biography, links, and optional location or interests.
+   127→- Media portfolio and published content.
+   128→- Followers, following, and followed communities.
+   129→- Projects, collaborations, and verified integrations.
+   130→- Connected wallets with explicit permissions.
+   131→- Privacy, notification, and account-security settings.
+   132→
+   133→Verification badges must have clear meanings. For example, a connected-wallet proof, a verified GitHub link, and a platform-reviewed creator identity are different forms of verification and should never be conflated.
+   134→
+   135→# 4. Discover: the media universe
+   136→
+   137→[Avang: Music & Video Streaming Platform · Built with Blink](https://images.openai.com/static-rsc-4/b5pvNqaePBZ7-6Q1BD6IAGpxc7dWXV31YkPlzg2wtqzHuK5h87jcnvdsGOa0oacdPrCei-WnPUX7BDn75TMVUDiErEw19LiRc7kD9n6NfTp4wJMr06u-2D0gcVpq_4WtoaAPo2KSElBxIgNGFw6WImLK-5S2cOZBKwS0wg4zNos?purpose=inline)
+   138→
+   139→[blink.new](https://blink.new/p/avang-music-streaming-blockchain-app-17jl1v7v)
+   140→
+   141→Discover is the primary home of the product. It should feel alive, curated, visual, and continually changing.
+   142→
+   143→## Homepage structure
+   144→
+   145→FEATURED
+   146→
+   147→[Overview Of The Metaverse Landscape - Crypto-Nexus](https://images.openai.com/static-rsc-4/vAECL4UDFd-6GGptVvDJ6hazLDKCIr7rLTnZ2HxSPtt6HmaG96f8RreqmIC4HV286angDT4ST9tXiAUVHx8i4JXR1q9hKjDVQiBjP-656rWy5kmhbvhUJKsxvjg1GDWxEnKfZghfi2jixFuVEDu5pO4Tw5gt-8jR3eCvi_eh4m8?purpose=inline)
+   148→
+   149→[metaverse08.com](https://metaverse08.com/metaverse-landscape/)
+   150→
+   151→A large featured experience
+   152→
+   153→A featured project, creator, live event, or technology showcase, with an image or video, description, and clear action.
+   154→
+   155→Trending in the universe
+   156→
+   157→[Faceplant On The Galaxy - song and lyrics by INZO, LSDREAM | Spotify](https://images.openai.com/static-rsc-4/XwPJZR0kS_emlaiZNvG5KFGQxaMGzJaLfXdoTWOf1NrzQJX3RG8QigonDxapzo8Uhwy9-ipuSlJEMWHregRWgnGKKmXcm0jxVNKGMelRtlDT6znTQ4bUKcm77VMCJzLceD7Au_o-89bPxbnhaCWv1nLgXv8aJeb1ymgY5YCK2-Y?purpose=inline)
+   158→
+   159→[2560x1700 Resolution The Landscape 2023 Digital Chromebook Pixel Wallpaper - Wallpapers Den](https://images.openai.com/static-rsc-4/i8rJsCIi5vty2rUZgjJ3kpgDtlBGiEnBXd6EET45M-9tcCG9LwEOmL-MoNZ9CKg0othEQN04t6Ybx29S82FDqSkPLRhpHtWcP9-sH7E1i84ULbB4Z4cwWbIP2Y7yHdAMv53j03OUqRYKetrp3Je_DBleBL_do88qrh3uqAH2Mwg?purpose=inline)
+   160→
+   161→[Post-Quantum Cryptography and the AI Era — Securing Tomorrow’s Digital World](https://images.openai.com/static-rsc-4/C9h9fkiES4KVlfgCEKqEGgH4Hxo4HDi1-LpYXrSt0_MObPI5pcG2CJL9TbvECGj6HEeAMqGt6DXQw9yYuHm0kPbBoHweB5WciY9U03-_Uk4iNssGCdgpymJRferTST-14x_zm-MIb8ulYEALGOFluRMJgs0PUfjMsefeeHsvKEo?purpose=inline)
+   162→
+   163→Media cards that lead directly to creators, discussions, and project pages.
+   164→
+   165→Live and happening now
+   166→
+   167→Live rooms, creator sessions, launch events, and community discussions.
+   168→
+   169→Discover includes multiple browsing modes:
+   170→
+   171→- For You: personalized recommendations.
+   172→- Following: updates from followed users and projects.
+   173→- Video: long-form and short-form video.
+   174→- Images: photography, digital art, design, and project galleries.
+   175→- Audio: podcasts, music, voice posts, and audio discussions.
+   176→- Live: scheduled streams, live rooms, and events.
+   177→- Technology: development projects, cryptography, AI, and security research.
+   178→- Launches: upcoming, active, and completed eligible launches.
+   179→- Communities: spaces gaining activity and new discussions.
+   180→
+   181→Users can search by topic, creator, project, media type, technology, or supported on-chain identifier.
+   182→
+   183→Recommendations should be based on explicit user preferences and legitimate engagement signals, with controls to hide topics, reset personalization, or opt out of personalized recommendations.
+   184→
+   185→## Media interactions
+   186→
+   187→Each post can support:
+   188→
+   189→- Likes or reactions.
+   190→- Comments and threaded replies.
+   191→- Saves and collections.
+   192→- Sharing and links.
+   193→- Following the creator.
+   194→- Project or space membership.
+   195→- Reporting and moderation.
+   196→- Optional tips or paid access where supported.
+   197→
+   198→The platform should not treat financial activity as proof that a creator or project is trustworthy.
+   199→
+   200→# 5. Creator Studio: the publishing engine
+   201→
+   202→[MOB AI Boss Studio - AI-Powered Content Creation & Training Platform](https://images.openai.com/static-rsc-4/y9cKrWLDc9un1zoOBK09qh7CLkh56uKRJK4d0XB3JvH6nxvloF37zazRkzZ8L_qO2KFbsaOJoLxne7pTyRBmKlUeGt2j0_WCcMCQOuJDzngTL50YOry71It8Fko1jEg7oKPGjmfLk04XpmfeStazO4CyY6TXyI0mrqobfOFv73I?purpose=inline)
+   203→
+   204→[mobaiboss.com](https://mobaiboss.com/)
+   205→
+   206→Creator Studio gives every user the ability to build a recognizable presence.
+   207→
+   208→## Publishing
+   209→
+   210→Creators can publish:
+   211→
+   212→- Videos and short clips.
+   213→- Images, illustrations, and photo galleries.
+   214→- Articles and long-form posts.
+   215→- Audio and podcasts.
+   216→- Announcements and project updates.
+   217→- Livestreams or event listings.
+   218→- Code snippets and technical demonstrations.
+   219→- Launch announcements and documentation links.
+   220→
+   221→The publishing interface should include drag-and-drop uploads, previews, captions, titles, thumbnails, accessibility text, tags, visibility settings, and scheduled publication.
+   222→
+   223→Uploads should show real progress and useful error messages. The application must validate file types, enforce size limits, process media safely, and store uploaded files outside the main application server.
+   224→
+   225→## Creator analytics
+   226→
+   227→A creator dashboard can show verified metrics such as views, watch time, engagement, follower growth, media performance, and subscription activity.
+   228→
+   229→Analytics must be derived from actual platform events. We should not display fabricated engagement, invented audience figures, or simulated earnings as real data.
+   230→
+   231→## Monetization for creators
+   232→
+   233→Creators can eventually offer memberships, premium content, paid community spaces, sponsorship placements, and supported digital products.
+   234→
+   235→Where money moves through the platform, each payment must have a defined payment provider or on-chain transaction path, explicit fees, a receipt, and a refund or dispute policy appropriate to the payment type.
+   236→
+   237→# 6. Spaces: customizable digital worlds
+   238→
+   239→[Gamified Community Dashboard – Modern Web App Interface by Pyush Anand on Dribbble](https://images.openai.com/static-rsc-4/Gn8g9BapeKjPAAyg9CD7SJNVB1GM-kszkEVRJG4WvotOEI7-xrsaS3YitAGVcmuHpfPeYHHvQ-QOC0Ipdc01OTrhSnDzfVSJHT1ErS4l4UXRW1ip8mOk2TZKaHxxEbRRg6Rt_81dUdSU3b-NDDDhvFZkzLY9lM_7sFlsOh9gdGM?purpose=inline)
+   240→
+   241→[dribbble.com](https://dribbble.com/shots/26828208-Gamified-Community-Dashboard-Modern-Web-App-Interface)
+   242→
+   243→Spaces are the core social unit of the universe. Every creator, company, development team, community, or project can establish its own environment.
+   244→
+   245→A Space should feel like a customizable mini-site embedded in Quantum Launchpad.
+   246→
+   247→## Space structure
+   248→
+   249→[Welcome | IllusionaryMediaFinal](https://images.openai.com/static-rsc-4/vjD0eiyRQ8_sX7Zwirl5TAGXpRt62q6_Yu5c3peongx-_EyFDw6RrSVBm7ea5uaPE8Os3HLDZIg8pVaMpfZQUWPiGXpZdEAa8u01XS5vpgEwqXeQt9-XrWnNrjGT1_V3xJSzPgwuL5hd8YvuxOaXG_NlhOzZ5avcm7qBOBnJ6KA?purpose=inline)
+   250→
+   251→[illusionary-media.com](https://www.illusionary-media.com/)
+   252→
+   253→## Example project space
+   254→
+   255→A custom identity, banner, description, and navigation for the community.
+   256→
+   257→Overview
+   258→
+   259→Media
+   260→
+   261→Wall
+   262→
+   263→Chat
+   264→
+   265→Members
+   266→
+   267→Events
+   268→
+   269→Development
+   270→
+   271→Launch
+   272→
+   273→Inside each Space
+   274→
+   275→- Custom colors, themes, banner, avatar, and layout.
+   276→- Public or private membership and role-based permissions.
+   277→- Media galleries, pinned posts, and announcements.
+   278→- Community wall, comments, and live activity.
+   279→- Channels for chat, questions, support, and collaboration.
+   280→- Events, livestreams, release notes, and project milestones.
+   281→- Optional launch page, token data, API documentation, and GitHub links.
+   282→
+   283→Space owners can manage moderators, members, posting permissions, access rules, and content visibility. Private content must be enforced by the backend rather than hidden only in the frontend.
+   284→
+   285→## Arenas
+   286→
+   287→An Arena is a specialized kind of Space designed around an activity or shared interest. Examples include:
+   288→
+   289→- Gaming and esports communities.
+   290→- Music and entertainment.
+   291→- AI and software development.
+   292→- Cybersecurity and cryptography.
+   293→- Digital art and design.
+   294→- Startups and product launches.
+   295→- Education, tutorials, and research.
+   296→
+   297→Arenas share the same underlying community engine but can enable different features and layouts.
+   298→
+   299→## Messaging
+   300→
+   301→The social system includes direct messages, group chats, Space channels, notifications, unread counts, blocking, reporting, and moderation.
+   302→
+   303→Real-time messaging requires a persistent data model and a WebSocket or equivalent real-time service. Message privacy claims must reflect the actual implementation; encrypted transport is not the same as end-to-end encryption.
+   304→
+   305→# 7. Launch Arena: the Solana launchpad
+   306→
+   307→[JetForge — Fair-Launch Solana Token Launchpad | Launch in 60 Seconds](https://images.openai.com/static-rsc-4/E7XH-MG6vCiqZgHdPD_Ou7Y19gpK8vdlcYyLyXTmmF-yr_CZU9OErST2BWqpJjFbsM1gvU55Rqk5F4OMtqoQofeuRtzhl6lWHkPu64qgdhoXoDU26fJxhcPtPFc2ooOvyUnQIrycWlggqJz9dm2tenjmmWNuJ4GMvVeuPdqokqk?purpose=inline)
+   308→
+   309→[jetforge.io](https://jetforge.io/)
+   310→
+   311→Launch Arena connects the social and creator experience to real digital asset infrastructure.
+   312→
+   313→The goal is to make project discovery and launch participation accessible while clearly presenting the risks and mechanics of digital assets.
+   314→
+   315→## Launch discovery
+   316→
+   317→Users can browse projects by launch status, category, launch time, liquidity, trading activity, and other available market data.
+   318→
+   319→Each project page should show, where applicable:
+   320→
+   321→- Project name, symbol, logo, and media.
+   322→- Creator identity and project Space.
+   323→- Token mint address and relevant program addresses.
+   324→- Network and launch status.
+   325→- Supply and allocation details.
+   326→- Liquidity and trading information from a supported data source.
+   327→- Transaction history and relevant on-chain links.
+   328→- Launch requirements and eligibility.
+   329→- Security checks, their sources, and their limitations.
+   330→- Fees and risks before a user signs a transaction.
+   331→
+   332→A risk indicator must explain its basis. For example, an unverified project owner, suspicious address pattern, or missing metadata may justify a warning, but a heuristic is not definitive proof of fraud.
+   333→
+   334→## Creating a launch
+   335→
+   336→The launch workflow should be explicit:
+   337→
+   338→1. The creator opens the launch builder.
+   339→2. They enter project metadata and upload approved media.
+   340→3. They select a supported launch configuration.
+   341→4. The backend validates inputs and permissions.
+   342→5. The application displays the expected network cost and platform fee.
+   343→6. The wallet prepares and signs the required transaction.
+   344→7. The platform submits or observes the transaction through its supported integration.
+   345→8. The backend verifies the actual on-chain outcome.
+   346→9. The launch page is updated only when the relevant transaction and launch state are confirmed.
+   347→10. A receipt records the verified outcome and itemized charges.
+   348→
+   349→A failed or expired transaction must not be recorded as a successful launch. Retries must not create duplicate platform charges.
+   350→
+   351→Important: real token deployment requires a clearly specified Solana program or launch provider. Wallet connection alone cannot create a token-launch mechanism. We must implement or integrate the actual launch transaction and verify its behavior before mainnet use.
+   352→
+   353→## Wallet integration
+   354→
+   355→Supported wallets should connect through standard wallet interfaces, including Phantom and Solflare where compatible.
+   356→
+   357→The app should:
+   358→
+   359→- Detect available wallets.
+   360→- Request explicit connection approval.
+   361→- Display the connected public address.
+   362→- Show balances and network status when supported.
+   363→- Reconnect where the wallet permits it.
+   364→- Request signed authentication messages when backend verification is needed.
+   365→- Display the exact transaction and fee before signing.
+   366→- Verify confirmed transactions before granting credits or recording revenue.
+   367→- Handle rejected signatures, insufficient balances, RPC errors, and network changes.
+   368→
+   369→The application must never request seed phrases or private keys. It should not be able to silently sign transactions.
+   370→
+   371→## Market terminal
+   372→
+   373→Launch Arena also provides an optional market terminal with price charts, trading volume, liquidity, transaction history, token metadata, watchlists, and alerts.
+   374→
+   375→Data sources should be named, timestamps should be visible where useful, and stale or unavailable data should be clearly indicated.
+   376→
+   377→Trading and swap functionality should only be offered through an actual supported transaction route. The interface must not imply that the platform collects a percentage of every market trade unless the relevant route technically enforces that fee.
+   378→
+   379→# 8. The revenue and payment engine
+   380→
+   381→The monetization system must be built as infrastructure, not as a visual badge or a number in a database.
+   382→
+   383→## Revenue streams
+   384→
+   385→| Product                | Revenue mechanism                                       |
+   386→| ---------------------- | ------------------------------------------------------- |
+   387→| Launch services        | Configurable fee on supported successful launches       |
+   388→| AHE API                | Usage-based requests, credits, and paid service tiers   |
+   389→| Creator economy        | Optional subscriptions and paid content                 |
+   390→| Premium Spaces         | Additional administration, analytics, and customization |
+   391→| Developer platform     | API quotas, integration features, and enterprise plans  |
+   392→| Supported transactions | Disclosed fee on eligible transactions where enforced   |
+   393→
+   394→An illustrative launch fee such as 0.01 SOL can be evaluated as a configurable starting point, but it is not a live fee until the treasury, transaction logic, and fee accounting are implemented and tested.
+   395→
+   396→## Fee engine requirements
+   397→
+   398→Each fee should have:
+   399→
+   400→- A fee identifier and version.
+   401→- A defined payer and recipient.
+   402→- A clear calculation rule.
+   403→- A currency and exact amount.
+   404→- A transaction or payment reference.
+   405→- A lifecycle status.
+   406→- A verified settlement record.
+   407→- A reconciliation mechanism.
+   408→
+   409→The system must prevent duplicate charges, distinguish pending payments from confirmed ones, and reconcile its internal records against the actual payment provider or blockchain.
+   410→
+   411→Revenue dashboards should distinguish quoted fees, submitted payments, confirmed payments, refunds, and net revenue.
+   412→
+   413→A fee ledger is an accounting record, not a substitute for the actual payment. It must never declare revenue received before settlement is verified.
+   414→
+   415→# 9. Quantum Labs: the technical ecosystem
+   416→
+   417→[IBM bringing organizations along quantum-safe journey - IBM Research](https://images.openai.com/static-rsc-4/_QAyOtgV9870vlsFjZpEyoc_JecRjKIW0hR6y95Lv71TeksZmGJcPcoSju7vJWUmyQPHnpS3uAoSv4_23gRD2JJA5gY2qs5cBh4IPXgSo9KORrxm_vzOXHR_t0GZKo7J9IX1ehDLos2yDvBkypl6cKVfqaljzACbvtdXjvgftk8?purpose=inline)
+   418→
+   419→[research.ibm.com](https://research.ibm.com/blog/quantum-safe-roadmap)
+   420→
+   421→Quantum Labs is the platform's technology center. It is where AHE, developer tools, project attestations, and cryptographic research become usable products.
+   422→
+   423→## AHE: Adaptive Hashing Encryption
+   424→
+   425→AHE should be integrated as a dedicated cryptographic service based on your existing `AHE_SDK` repository, rather than recreated inside browser code or blindly ported into the frontend.
+   426→
+   427→Its intended capabilities include:
+   428→
+   429→- Versioned encryption and decryption APIs.
+   430→- Authenticated encryption and tamper detection.
+   431→- Post-quantum key establishment where supported by the validated protocol.
+   432→- Key derivation and cryptographic context binding.
+   433→- Key and algorithm version management.
+   434→- Request authentication and usage metering.
+   435→- Health checks and operational monitoring.
+   436→- Developer documentation, examples, and test environments.
+   437→- Integration with paid API plans.
+   438→
+   439→A reasonable architecture to validate against the actual SDK is ML-KEM for post-quantum key establishment, HKDF-SHA-256 for deriving encryption keys, and AES-256-GCM for authenticated encryption. The exact design must follow a documented protocol and tested implementation.
+   440→
+   441→### AHE's operating principles
+   442→
+   443→1. Never return private key material or raw shared secrets to the browser.
+   444→2. Never log plaintext, private keys, or derived encryption secrets.
+   445→3. Use unique, correctly managed nonces for AES-GCM.
+   446→4. Authenticate requesters and enforce quotas.
+   447→5. Version algorithms and ciphertext formats.
+   448→6. Test modified ciphertexts, incorrect keys, invalid parameters, replay attempts where relevant, and failure paths.
+   449→7. Define key rotation, revocation, retention, and recovery procedures.
+   450→
+   451→AHE should be presented as a cryptographic product whose properties are established by implementation and testing. Post-quantum components alone do not make an entire system quantum-safe, and the product should not claim independent certification without evidence.
+   452→
+   453→## AHE developer console
+   454→
+   455→Developers need a working environment to:
+   456→
+   457→- Create and revoke API keys.
+   458→- Read API documentation.
+   459→- Inspect request and response schemas.
+   460→- Run sample encrypt/decrypt operations using test data.
+   461→- View latency, usage, quotas, and errors.
+   462→- See algorithm and protocol versions.
+   463→- Manage plans and billing.
+   464→- Access SDK examples and integration guides.
+   465→
+   466→The console should clearly separate sandbox and production environments. Test keys and sample ciphertexts must never be treated as production secrets.
+   467→
+   468→## PQC.market-inspired integration
+   469→
+   470→PQC.market is a technical reference for post-quantum launch attestations and related protocol concepts. The integration must be based on its actual published API surface, license and terms, supported methods, and compatibility.
+   471→
+   472→The architecture should use an adapter so the launchpad can call the provider or verified implementation without coupling the whole product to it.
+   473→
+   474→The adapter must establish:
+   475→
+   476→- Which endpoints or SDKs are actually supported.
+   477→- How requests are authenticated, if authentication is required.
+   478→- How launch payloads are canonicalized.
+   479→- Which signature and verification algorithms are used.
+   480→- How key state and one-time signing material are managed.
+   481→- How failures and unavailable services are handled.
+   482→- How the result is independently verified and displayed.
+   483→
+   484→If no supported API exists for a desired function, we must not invent an endpoint or claim a successful integration. We can implement a permitted, independently reviewed protocol adapter where appropriate.
+   485→
+   486→### What a launch attestation means
+   487→
+   488→A valid attestation may establish that specified launch metadata was signed under a particular protocol and key.
+   489→
+   490→It does not automatically establish that a project is honest, its smart contracts are safe, or its ordinary Solana transactions are resistant to quantum attacks.
+   491→
+   492→Solana's normal signature and execution environment must be evaluated separately. A post-quantum attestation layer does not replace the chain's transaction-signature scheme.
+   493→
+   494→## Quantum project verification
+   495→
+   496→Each project can have a technical verification panel with separate results for:
+   497→
+   498→- Wallet and address consistency.
+   499→- Launch transaction confirmation.
+   500→- Metadata integrity.
+   501→- Signature or attestation verification.
+   502→- Repository and release links.
+   503→- Available contract or program checks.
+   504→- Last verification time and data source.
+   505→
+   506→Every result should have a precise meaning, evidence, and status. An unavailable check is not a passed check.
+   507→
+   508→# 10. Developer ecosystem and GitHub
+   509→
+   510→The platform should enable software teams to turn their projects into discoverable, interactive destinations.
+   511→
+   512→Developers can link repositories, documentation, release notes, API references, demos, and technical discussions to a project Space.
+   513→
+   514→A repository integration should use explicit authorization, minimal permissions, and a clear account-disconnection process.
+   515→
+   516→## Developer capabilities
+   517→
+   518→- Public project pages.
+   519→- GitHub repository linking.
+   520→- SDK documentation and code examples.
+   521→- API key management.
+   522→- Usage metering and quota enforcement.
+   523→- Webhooks for supported events.
+   524→- Sandbox environments.
+   525→- Technical changelogs and release announcements.
+   526→- Error reports and integration diagnostics.
+   527→- Optional private developer workspaces.
+   528→
+   529→The platform should make it easy to discover a technology, inspect its documentation, run a safe demo, and build an integration without leaving the project ecosystem.
+   530→
+   531→# 11. AI guide and conversational agent
+   532→
+   533→The speaking AI agent should function as a guide, not as an all-powerful automated trader.
+   534→
+   535→Users can ask it to:
+   536→
+   537→- Explain how to use the platform.
+   538→- Summarize public project documentation.
+   539→- Find relevant communities and media.
+   540→- Explain AHE and post-quantum cryptographic concepts.
+   541→- Interpret transaction fields and fee quotes.
+   542→- Help developers troubleshoot API requests.
+   543→- Summarize project announcements.
+   544→- Navigate their own account settings.
+   545→
+   546→Voice interaction should include microphone permission, visible recording state, speech-to-text or voice-input handling, and a clear way to stop listening.
+   547→
+   548→The AI must not fabricate security verification, investment returns, or transaction outcomes. It must not silently sign transactions or move funds. Any transaction it helps prepare must still be reviewed and approved by the user.
+   549→
+   550→# 12. Search, discovery, and recommendations
+   551→
+   552→Global search should unify the product without mixing unrelated result types.
+   553→
+   554→Users should be able to search for:
+   555→
+   556→- People and creators.
+   557→- Media and topics.
+   558→- Spaces and Arenas.
+   559→- Projects and launches.
+   560→- Token identifiers and supported addresses.
+   561→- Documentation and APIs.
+   562→- Repository names and supported technical metadata.
+   563→
+   564→Filters should let users narrow results by type, recency, relevance, or available status.
+   565→
+   566→Recommendations can combine declared interests, followed accounts, content engagement, and community activity. They should have privacy controls and must not present paid placements as organic recommendations without disclosure.
+   567→
+   568→Search indexing and recommendations should be implemented as backend services, with pagination and rate limits, rather than an unbounded scan of every record.
+   569→
+   570→# 13. Notifications and activity
+   571→
+   572→The notification center keeps users informed without overwhelming them.
+   573→
+   574→It can cover new followers, replies, mentions, messages, Space invitations, creator updates, events, launch progress, transaction confirmations, API usage warnings, and security alerts.
+   575→
+   576→Users need granular controls for notification categories, delivery channels, and frequency.
+   577→
+   578→Financial and security notifications must be based on verified events. For example, a transaction should not be labelled successful merely because the browser submitted it.
+   579→
+   580→Email or push notifications require their own integration and consent model. Notifications should never expose secrets or sensitive message contents unnecessarily.
+   581→
+   582→# 14. Account security, privacy, and moderation
+   583→
+   584→A platform combining social media, wallets, user uploads, APIs, and financial transactions requires a unified security model.
+   585→
+   586→## Account security
+   587→
+   588→- Secure authentication and session management.
+   589→- Appropriate password or identity-provider controls.
+   590→- Optional multifactor authentication.
+   591→- Session revocation and account recovery.
+   592→- Wallet ownership verification for wallet-dependent operations.
+   593→- Role-based authorization.
+   594→- Abuse and rate-limit controls.
+   595→- Audit trails for privileged actions.
+   596→
+   597→## Privacy
+   598→
+   599→- Clear privacy and data-retention policies.
+   600→- User control over public profile information.
+   601→- Explicit permission for wallet and GitHub connections.
+   602→- Data export and account deletion workflows where applicable.
+   603→- Access controls for private Spaces and messages.
+   604→- Secure media storage and signed access where required.
+   605→- Careful handling of South African POPIA obligations and other applicable privacy requirements.
+   606→
+   607→Public blockchain data is not private merely because the application hides it.
+   608→
+   609→## Moderation and abuse prevention
+   610→
+   611→- Report and block controls.
+   612→- Spam detection and rate limits.
+   613→- Moderator roles and review queues.
+   614→- Appeals and enforcement history.
+   615→- Content removal and account suspension.
+   616→- Upload scanning and abuse controls.
+   617→- Launch and transaction risk warnings.
+   618→- Impersonation and misleading-project reporting.
+   619→
+   620→Moderation decisions should be auditable and proportionate. A risk score should support investigation, not become an unexplained automatic accusation.
+   621→
+   622→# 15. Administration and operations
+   623→
+   624→A serious platform needs a private operations console that is separate from the public-facing product.
+   625→
+   626→Authorized administrators need to manage:
+   627→
+   628→- User accounts, reports, and moderation.
+   629→- Spaces, permissions, and content issues.
+   630→- Launch review and supported launch configurations.
+   631→- Fee schedules and treasury configuration.
+   632→- Payment reconciliation and refund states.
+   633→- AHE service health and API usage.
+   634→- Provider integrations and API failures.
+   635→- Verification status and audit events.
+   636→- Feature flags and maintenance modes.
+   637→- Security incidents and operational alerts.
+   638→
+   639→Privileged operations require role-based access and audit logging. Changes to fee schedules or treasury addresses should require stronger authorization than ordinary content edits.
+   640→
+   641→The system should include monitoring, backups, restore testing, error tracking, secret rotation, dependency updates, and a documented rollback procedure.
+   642→
+   643→# 16. The underlying application architecture
+   644→
+   645→The frontend should be modular, but the platform should not begin as an unnecessarily complicated collection of microservices.
+   646→
+   647→A sensible first production architecture is a modular web application with a dedicated AHE service and separate media, database, and real-time infrastructure as required.
+   648→
+   649→\#chatgpt-mermaid-\_r_eie\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_eie\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_eie\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_eie\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_eie\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_eie\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_eie\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_eie\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_eie\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_eie\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_eie\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_eie\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_eie\_ p{margin:0;}#chatgpt-mermaid-\_r_eie\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_eie\_ .label text,#chatgpt-mermaid-\_r_eie\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ .node rect,#chatgpt-mermaid-\_r_eie\_ .node circle,#chatgpt-mermaid-\_r_eie\_ .node ellipse,#chatgpt-mermaid-\_r_eie\_ .node polygon,#chatgpt-mermaid-\_r_eie\_ .node path{fill:rgb(222, 234, 251);stroke:rgb(83, 154, 248);stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .rough-node .label text,#chatgpt-mermaid-\_r_eie\_ .node .label text,#chatgpt-mermaid-\_r_eie\_ .image-shape .label,#chatgpt-mermaid-\_r_eie\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_eie\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .rough-node .label,#chatgpt-mermaid-\_r_eie\_ .node .label,#chatgpt-mermaid-\_r_eie\_ .image-shape .label,#chatgpt-mermaid-\_r_eie\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_eie\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_eie\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_eie\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_eie\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_eie\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_eie\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_eie\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_eie\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_eie\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_eie\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_eie\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_eie\_ .icon-shape,#chatgpt-mermaid-\_r_eie\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_eie\_ .icon-shape p,#chatgpt-mermaid-\_r_eie\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_eie\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_eie\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_eie\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_eie\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_eie\_ .node .neo-node{stroke:rgb(83, 154, 248);}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_eie\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_eie\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node .neo-line path{stroke:rgb(83, 154, 248);filter:none;}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_eie\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_eie\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_eie\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_eie\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_eie\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 79, 153);}#chatgpt-mermaid-\_r_eie\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 79, 153);}#chatgpt-mermaid-\_r_eie\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_eie\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_eie\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .node rect,#chatgpt-mermaid-\_r_eie\_ .node circle,#chatgpt-mermaid-\_r_eie\_ .node ellipse,#chatgpt-mermaid-\_r_eie\_ .node polygon,#chatgpt-mermaid-\_r_eie\_ .node path{fill:rgb(229, 243, 255);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_eie\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_eie\_ .node.mermaid-decision .label-container{fill:rgb(245, 250, 255);stroke:rgb(206, 219, 229);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_eie\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_eie\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_eie\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}Web and Mobile UsersQuantum Launchpad FrontendIdentity and AccessApplication APISolana Wallet AdapterSolana RPC and ProgramsApplication DatabaseMedia Storage and DeliveryRealtime MessagingFee Ledger and ReconciliationAHE Cryptographic ServicePQC Attestation AdapterGitHub IntegrationMarket Data ProvidersAI GuideLogs, Metrics and Alerts
+   650→
+   651→## Core data entities
+   652→
+   653→The database should have explicit models for:
+   654→
+   655→- Users and profiles.
+   656→- Authentication identities and sessions.
+   657→- Connected wallet addresses and ownership-verification records.
+   658→- Media assets and published posts.
+   659→- Comments, reactions, follows, and collections.
+   660→- Spaces, memberships, roles, and messages.
+   661→- Projects, launch configurations, and launch states.
+   662→- Chain transactions and verification records.
+   663→- Fee schedules, payment attempts, and ledger entries.
+   664→- AHE API clients, usage events, plans, and quotas.
+   665→- Attestations, verification results, and protocol versions.
+   666→- GitHub connections and linked repositories.
+   667→- Notifications, reports, moderation decisions, and audit events.
+   668→
+   669→Every financial record needs a stable identifier and idempotency controls. User-generated content needs ownership and visibility rules. Secrets must not be stored in ordinary profile or application records.
+   670→
+   671→# 17. API design
+   672→
+   673→The frontend should communicate with well-defined application APIs. Example route families include:
+   674→
+   675→| Route family           | Responsibility                                          |
+   676→| ---------------------- | ------------------------------------------------------- |
+   677→| `/api/auth/*`          | Authentication, sessions, account security              |
+   678→| `/api/profiles/*`      | Profiles, follows, account preferences                  |
+   679→| `/api/media/*`         | Upload authorization, asset metadata, publishing        |
+   680→| `/api/posts/*`         | Feed, posts, comments, reactions, saves                 |
+   681→| `/api/spaces/*`        | Space creation, membership, permissions                 |
+   682→| `/api/messages/*`      | Messaging and conversation metadata                     |
+   683→| `/api/projects/*`      | Project profiles and launch configurations              |
+   684→| `/api/wallet/*`        | Wallet authentication and verified address associations |
+   685→| `/api/launches/*`      | Launch preparation, status, and verification            |
+   686→| `/api/fees/*`          | Fee quotes, payment status, and receipts                |
+   687→| `/api/ahe/*`           | Authorized AHE service access and usage                 |
+   688→| `/api/attestations/*`  | Attestation creation or retrieval and verification      |
+   689→| `/api/developer/*`     | API keys, quotas, documentation, and webhooks           |
+   690→| `/api/notifications/*` | User notification preferences and delivery status       |
+   691→
+   692→These are proposed route contracts, not claims that these endpoints already exist. The final route schemas should be based on the selected framework, authentication model, and verified provider APIs.
+   693→
+   694→All routes must validate input, enforce permissions, limit abuse, and return consistent errors. Payment and launch endpoints must handle retries safely.
+   695→
+   696→# 18. Monetization, subscriptions, and plans
+   697→
+   698→The platform should make its free experience useful while providing paid capabilities to users who receive additional value.
+   699→
+   700→## Explorer
+   701→
+   702→Free entry into the universe
+   703→
+   704→Browse public media, discover creators, join eligible public Spaces, follow projects, and explore launches.
+   705→
+   706→## Creator
+   707→
+   708→For people building an audience
+   709→
+   710→Advanced publishing controls, creator analytics, customizable Spaces, scheduling, and eligible monetization features.
+   711→
+   712→## Developer
+   713→
+   714→For builders and integrations
+   715→
+   716→AHE API usage, developer documentation, API quotas, sandbox tools, SDK access, and technical diagnostics.
+   717→
+   718→## Enterprise
+   719→
+   720→For organizations
+   721→
+   722→Negotiated service limits, integration support, organizational controls, agreed service levels, and deployment options where available.
+   723→
+   724→Exact prices should be set only after service costs, demand, payment processing, support requirements, and applicable legal obligations are assessed.
+   725→
+   726→Paid features must be enforced by the backend. A hidden button or a frontend-only plan label is not access control.
+   727→
+   728→# 19. Reliability and real-world launch requirements
+   729→
+   730→The product is not ready for real financial activity merely because the UI works.
+   731→
+   732→Before mainnet payments or public launches are enabled, the release must pass these gates:
+   733→
+   734→- The application builds and its tests pass.
+   735→- Authentication and permissions are enforced server-side.
+   736→- Wallet ownership verification works.
+   737→- Supported launch transactions are tested on Solana devnet.
+   738→- The actual fee recipient and amount are verified.
+   739→- Duplicate payments and retry cases are tested.
+   740→- On-chain confirmation and reconciliation work.
+   741→- AHE cryptographic operations pass appropriate security tests.
+   742→- Attestation verification matches the actual protocol.
+   743→- Media uploads and private Space permissions are secure.
+   744→- Secrets, monitoring, backups, and rollback procedures are configured.
+   745→- Terms, privacy, fees, and relevant risk disclosures are in place.
+   746→- Production credentials are separated from development credentials.
+   747→
+   748→Standards such as NIST guidance can inform engineering and risk controls, but the platform must not claim NIST or ISO certification unless it has actually completed the relevant assessment and obtained the applicable certification.
+   749→
+   750→# 20. What “complete V2.5” means
+   751→
+   752→The following checklist defines the intended delivery scope.
+   753→
+   754→## V2.5 delivery checklist
+   755→
+   756→0 / 29
+   757→
+   758→### Product and media
+   759→
+   760→Responsive application shell and navigation
+   761→
+   762→Discovery feed and global search
+   763→
+   764→Profiles, follows, reactions, comments and saves
+   765→
+   766→Video, image, article and audio publishing
+   767→
+   768→Media storage, upload validation and delivery
+   769→
+   770→Customizable Spaces and Arenas
+   771→
+   772→Messaging, notifications and moderation
+   773→
+   774→### Solana and revenue
+   775→
+   776→Wallet connection and reconnection
+   777→
+   778→Wallet ownership verification
+   779→
+   780→Project and launch workflow
+   781→
+   782→Supported launch transaction integration
+   783→
+   784→Fee quote and treasury configuration
+   785→
+   786→On-chain verification and transaction receipts
+   787→
+   788→Idempotent fee ledger and reconciliation
+   789→
+   790→Market data with source and freshness labels
+   791→
+   792→### AHE and post-quantum
+   793→
+   794→Separate authenticated AHE service
+   795→
+   796→Validated encryption and decryption workflow
+   797→
+   798→Key lifecycle and protocol versioning
+   799→
+   800→AHE API plans and usage metering
+   801→
+   802→PQC-market integration feasibility and adapter
+   803→
+   804→Attestation verification and key-state management
+   805→
+   806→Cryptographic and integration test suite
+   807→
+   808→### Developer and operations
+   809→
+   810→GitHub and documentation links
+   811→
+   812→API keys, quotas and developer portal
+   813→
+   814→AI guide with safe interaction boundaries
+   815→
+   816→Admin, roles and audit logs
+   817→
+   818→Privacy, security and incident controls
+   819→
+   820→Monitoring, backups and rollback
+   821→
+   822→Deployment documentation and release gates
+   823→
+   824→Reset checklistCopy checklist
+   825→
+   826→This is a scope checklist, not a claim that any of these items has already been implemented or verified.
+   827→
+   828→# 21. The build strategy
+   829→
+   830→To build this properly, I would divide V2.5 into four delivery stages while keeping the final architecture consistent.
+   831→
+   832→Stage 1 — Product foundation: design system, application shell, authentication, profiles, media publishing, Spaces, and discovery.
+   833→
+   834→Stage 2 — Real transactions: Solana wallet connectivity, wallet ownership verification, supported launch flow, fee quotes, on-chain verification, and payment accounting.
+   835→
+   836→Stage 3 — Technical differentiation: AHE integration, PQC protocol adapter, developer console, GitHub links, API metering, and security verification.
+   837→
+   838→Stage 4 — Full ecosystem: messaging, live experiences, premium plans, creator monetization, AI guide, advanced analytics, administrative tools, and production hardening.
+   839→
+   840→The ordering is intentional. We build a useful product early, prove the revenue path, and then expand the ecosystem without pretending unimplemented services are live.
+   841→
+   842→## The final definition
+   843→
+   844→Quantum Launchpad V2.5 is an immersive, media-first social and creator universe with customizable digital communities, a Solana launchpad, transparent financial infrastructure, a developer ecosystem, and integrated AHE and post-quantum verification services.
+   845→
+   846→Its competitive distinction is the combination: media and community bring people into the platform; creator and developer tools give them reasons to stay; launches and paid services create monetization opportunities; and AHE plus post-quantum capabilities provide a technical foundation that can be developed and validated independently.
+   847→
+   848→The build should be judged by three outcomes:
+   849→
+   850→1. It looks exceptional: large media surfaces, modern interaction design, responsive layouts, and a coherent identity.
+   851→2. It works end to end: real accounts, media, communities, wallet authorization, supported transactions, verified fees, and functioning APIs.
+   852→3. It earns trust and revenue: accurate security claims, transparent pricing, verifiable transaction records, privacy controls, and tested production infrastructure.
+   853→
+   854→That is the complete V2.5 target — from the first pixel a visitor sees to the cryptographic service and financial ledger underneath it.
