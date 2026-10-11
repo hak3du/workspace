@@ -30,7 +30,10 @@ type Tab = "terminal" | "following" | "created";
 type Sort = "new" | "progress" | "mcap" | "trades";
 type MarketplaceStatus = {
   dataSource: "database";
-  environment: "simulation";
+  environment: "simulation" | "devnet" | "mainnet" | "invalid";
+  launchesEnabled: boolean;
+  realTransactionsEnabled: boolean;
+  productionReady: boolean;
   counts: { tokens: number; trades: number };
   integrations: {
     wallet: string;
@@ -148,7 +151,15 @@ export function LaunchView() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="border-violet-400/40 bg-violet-500/20 text-violet-200">AHE Market</Badge>
             <Badge variant="outline" className="border-amber-400/40 text-amber-200">
-              {statusUnavailable ? "Status unavailable" : marketplaceStatus ? "Simulation · database-backed" : "Checking environment…"}
+              {statusUnavailable
+                ? "Status unavailable · launches locked"
+                : marketplaceStatus
+                  ? marketplaceStatus.environment === "simulation"
+                    ? "Simulation · database-backed"
+                    : marketplaceStatus.environment === "invalid"
+                      ? "Invalid environment · launches locked"
+                      : `${marketplaceStatus.environment} · real transactions disabled`
+                  : "Checking environment…"}
             </Badge>
           </div>
           <h1 className="display-2 mt-4">
@@ -158,7 +169,11 @@ export function LaunchView() {
             Explore database-backed token listings and marketplace activity. Wallet, Pump.fun launches, and AHE attestations are not connected yet; launch and trade figures remain simulation-only.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button className="glow-violet h-11" onClick={() => setCreateOpen(true)}>
+            <Button
+              className="glow-violet h-11"
+              onClick={() => setCreateOpen(true)}
+              disabled={!marketplaceStatus || !marketplaceStatus.launchesEnabled}
+            >
               <Rocket className="size-4" />
               Create a Token
             </Button>
@@ -269,7 +284,11 @@ export function LaunchView() {
                 ? "Follow relationships are not implemented yet. We will show this feed only when it can be populated from real follow data."
                 : "Try a different search, or be the one who fills the void."}
           </p>
-          <Button className="glow-violet mx-auto h-11" onClick={() => setCreateOpen(true)}>
+          <Button
+            className="glow-violet mx-auto h-11"
+            onClick={() => setCreateOpen(true)}
+            disabled={!marketplaceStatus || !marketplaceStatus.launchesEnabled}
+          >
             <Rocket className="size-4" />
             Create a Token
           </Button>
