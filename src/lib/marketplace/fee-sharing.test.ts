@@ -65,7 +65,7 @@ describe("validateFeeShares", () => {
   test("rejects malformed recipient entries without throwing", () => {
     const result = validateFeeShares([null, "not-an-object", 42]);
     expect(result.valid).toBe(false);
-    expect(result.errors).toHaveLength(3);
+    expect(result.errors).toHaveLength(4);
     expect(result.totalBps).toBe(0);
     expect(result.shares).toEqual([]);
   });
