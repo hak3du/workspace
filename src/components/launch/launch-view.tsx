@@ -261,11 +261,13 @@ export function LaunchView() {
       ) : tokens.length === 0 ? (
         <div className="glass space-y-3 rounded-2xl p-10 text-center">
           <Rocket className="mx-auto size-8 text-violet-400" />
-          <h3 className="font-bold">{tab === "created" ? "You haven't launched anything yet" : "No tokens match your search"}</h3>
+          <h3 className="font-bold">{tab === "created" ? "You haven't launched anything yet" : tab === "following" ? "Following feed is not available yet" : "No tokens match your search"}</h3>
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">
             {tab === "created"
-              ? "Your launches will appear here the moment they go live on the bonding curve."
-              : "Try a different search, or be the one who fills the void."}
+              ? "Your launches will appear here. Current launches are simulated and do not create real Solana tokens."
+              : tab === "following"
+                ? "Follow relationships are not implemented yet. We will show this feed only when it can be populated from real follow data."
+                : "Try a different search, or be the one who fills the void."}
           </p>
           <Button className="glow-violet mx-auto h-11" onClick={() => setCreateOpen(true)}>
             <Rocket className="size-4" />
