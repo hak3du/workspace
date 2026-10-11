@@ -91,3 +91,11 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Verification:** Source change committed. Typecheck, tests, and deployed endpoint checks have not run; GitHub Actions is still billing-locked.
 - **Status:** Code change committed; runtime verification pending.
 
+### ERR-007 — Vercel deployment reported an error; root cause not yet established
+- **Observed:** The Vercel GitHub integration posted a deployment status of `Error` for the `workspace` project, linking to deployment `3teConc2AfpozAwLtWBdN9Y2pXKN`.
+- **Not yet confirmed:** The exact failing build step or runtime exception. The status notification does not include the deployment logs, so it is not safe to attribute the failure to TypeScript, Prisma, environment variables, or another cause.
+- **Change:** Commits `0e67075` and `4985c2f` correct conflicting configuration documentation: the environment template now reflects the production-first default and explicitly states that Turso credentials do not connect the current Prisma client; the rollout guide no longer says simulation is the default.
+- **Required next step:** Open the linked Vercel deployment and inspect the Build Logs to identify the first actual error; fix that error before attempting to validate database persistence.
+- **Verification:** Source/documentation changes committed. Deployment logs and a successful redeploy have not been verified.
+- **Status:** Open; root cause unknown.
+
