@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getMarketplaceReadiness } from "@/lib/marketplace/config";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Phase 1 marketplace health contract.
- *
- * Counts come from the configured database. The integration flags remain
- * explicitly disconnected until wallet, Solana/Pump.fun, and AHE verification
- * adapters are implemented and independently tested.
+ * Operational status. This endpoint reports configured/implemented capability,
+ * not just environment variables. Mainnet readiness stays false until the
+ * actual wallet and Pump.fun transaction adapter has been implemented.
  */
 export async function GET() {
   try {
@@ -16,16 +15,18 @@ export async function GET() {
       db.token.count(),
       db.trade.count(),
     ]);
+    const readiness = getMarketplaceReadiness();
 
     return NextResponse.json({
       dataSource: "database",
-      environment: "simulation",
+      environment: readiness.mode,
+      launchesEnabled: readiness.launchesEnabled,
+      realTransactionsEnabled: readiness.realTransactionsEnabled,
+      productionReady: readiness.productionReady,
       counts: { tokens: tokenCount, trades: tradeCount },
       integrations: {
-        wallet: "not-connected",
-        solana: "not-connected",
-        pumpFun: "not-connected",
-        aheVerification: "not-connected",
+        ...readiness.integrations,
+        solana: readiness.integrations.solanaRpc,
       },
       checkedAt: new Date().toISOString(),
     }, {
