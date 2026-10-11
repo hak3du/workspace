@@ -129,3 +129,9 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Scope:** This does not install dependencies, run, or validate the WebSocket example. If the example is intended to be runnable, it needs its own dependency manifest/workspace and lockfile-managed dependencies.
 - **Verification:** Change committed to the feature branch through GitHub's file update API. Vercel must rebuild the PR preview to determine whether further type errors remain; no successful build is claimed yet.
 - **Status:** Targeted source fix committed; preview rebuild pending.
+
+### ERR-012 — Portfolio refresh button uses unsupported variant
+- **Observed:** Vercel Preview build for `feat/ahe-market-production-foundation`, commit `05836f0`, compiled the Next.js application but failed during TypeScript validation at `src/components/portfolio/portfolio-view.tsx:77`: `variant="glass"` is not assignable to the variants exported by the shared Button component.
+- **Change:** Commit `39b1211` changes the refresh button to the supported `ghost` variant and preserves its translucent appearance with utility classes.
+- **Verification:** The source change is committed to the feature branch. No local typecheck or Vercel rebuild has yet confirmed the fix; further type errors may surface after this one is resolved.
+- **Status:** Targeted source fix committed; Preview rebuild required.
