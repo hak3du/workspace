@@ -107,3 +107,16 @@ This is a living log. Record confirmed observations separately from hypotheses; 
 - **Branch caveat:** The deployed commit is `fb6f9d9` on `main`, while PR #2 head is `08d546e` on `feat/ahe-market-production-foundation`. The supplied log does not prove that the PR branch changes are deployed.
 - **Next verification:** Confirm the deployment's Git commit and branch in Vercel; restore/run an explicit TypeScript check (for example `bun run typecheck` if configured) and test deployed health/status endpoints. Turso integration and real transaction gates remain open.
 - **Status:** Successful deployment observed for the logged main commit; feature branch and runtime behavior unverified.
+
+### ERR-009 — Latest pull-request preview deployment still reports Error
+- **Observed:** Vercel's GitHub integration posted a newer Error deployment for PR #2, linked to deployment `EX8bvrBE4eHk2f6KVCjyF7cFuW5G` at approximately 2026-10-11 21:06 UTC. The preview URL is not exposed in the comment.
+- **Separate from:** The user-provided log confirms a successful deployment of `main` at commit `fb6f9d9`; it does not establish that the PR branch preview succeeded.
+- **Not yet confirmed:** The preview's actual failing step. Vercel's deployment page is not accessible through the available read interface, so do not infer that the cause is TypeScript, environment variables, or Prisma.
+- **Required next step:** Inspect Build Logs for deployment `EX8bvrBE4eHk2f6KVCjyF7cFuW5G` and capture the first actionable error.
+- **Status:** Open; build root cause unknown.
+
+### ERR-010 — CI job failed before any steps were reported
+- **Observed:** GitHub Actions run `38174926403` for commit `2d752b9` completed as failure approximately two seconds after starting. GitHub reports runner ID `0` and an empty steps list; downloadable logs were unavailable.
+- **Not yet confirmed:** The precise failure reason for this run. It resembles the previously recorded Actions billing-lock failure (ERR-001), but this run's error message was not retrievable, so the billing lock is not asserted as confirmed cause.
+- **Impact:** No typecheck, tests, lint, or build result can be inferred from this run.
+- **Status:** Open; runner-level failure details unavailable.
