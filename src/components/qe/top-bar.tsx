@@ -249,12 +249,12 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6">
-        <button onClick={() => navigate({ name: "discover" })} className="flex items-center gap-2.5 focus:outline-none" aria-label="Quantum Launchpad home">
+        <button onClick={() => navigate({ name: "discover" })} className="flex items-center gap-2.5 focus:outline-none" aria-label="Quantum Leap home">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white shadow-[0_0_18px_rgba(139,92,246,0.5)]">
             <Sparkles className="h-5 w-5" />
           </span>
           <span className="hidden text-lg font-extrabold tracking-tight sm:block">
-            QUANTUM<span className="text-gradient"> LAUNCHPAD</span>
+            QUANTUM<span className="text-gradient"> LEAP</span>
           </span>
         </button>
 
