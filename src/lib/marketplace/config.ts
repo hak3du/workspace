@@ -1,8 +1,7 @@
 /**
  * AHE Market deployment mode and integration readiness.
  *
- * Production is the default product target. Simulation is opt-in and must be
- * explicitly selected for a customer demo; it is never an implicit fallback.
+ * Simulation is the safe default. Devnet and mainnet require explicit configuration.
  * Selecting "devnet" or "mainnet" does not enable real trading. The Pump.fun
  * transaction adapter stays unavailable until a real SDK-backed implementation
  * is merged and tested, so synthetic signatures cannot masquerade as live trades.
@@ -14,9 +13,8 @@ const VALID_MODES: readonly MarketMode[] = ["simulation", "devnet", "mainnet"];
 
 export function getMarketMode(): MarketMode {
   const configured = process.env.AHE_MARKET_MODE;
-  // Fail closed toward the intended production target; never silently start a
-  // live product in demo mode just because an environment variable is missing.
-  if (!configured) return "mainnet";
+  // Never default to a live network when configuration is missing.
+  if (!configured) return "simulation";
   const value = configured.toLowerCase();
   return VALID_MODES.includes(value as Exclude<MarketMode, "invalid">)
     ? (value as Exclude<MarketMode, "invalid">)

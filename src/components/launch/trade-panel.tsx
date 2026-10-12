@@ -11,6 +11,9 @@ import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
 import { compact, priceLabel, sol } from "@/lib/format";
 import { useApp } from "@/store/app-store";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -33,15 +36,13 @@ export function TradePanel({
   onTraded: () => void;
 }) {
   const { toast } = useToast();
-  const wallet = useApp((s) => s.wallet);
-  const connectWallet = useApp((s) => s.connectWallet);
-  const connected = Boolean(wallet.address);
+  const { connected, publicKey } = useWallet();
+  const walletAddress = publicKey?.toBase58() ?? null;
 
   const [side, setSide] = useState<"BUY" | "SELL">("BUY");
   const [amount, setAmount] = useState("");
   const [percent, setPercent] = useState(50);
   const [pending, setPending] = useState(false);
-  const [connecting, setConnecting] = useState(false);
 
   const state = { virtualSol: token.virtualSol, virtualToken: token.virtualToken };
   const spot = spotPrice(state);
@@ -56,15 +57,6 @@ export function TradePanel({
   const tokenIn = myHolding && myHolding.amount > 0 ? (myHolding.amount * percent) / 100 : 0;
   const sellGross = tokenIn > 0 ? solOut(state, tokenIn) : 0;
   const sellReceive = sellGross * 0.99;
-
-  async function handleConnect() {
-    setConnecting(true);
-    try {
-      await connectWallet();
-    } finally {
-      setConnecting(false);
-    }
-  }
 
   async function handleSubmit() {
     if (side === "BUY" && (!(amt >= 0.01) || !(amt <= 100))) {
@@ -98,23 +90,26 @@ export function TradePanel({
       setPending(false);
     }
   }
+if (!connected) {
+  return (
+    <div className="glass rounded-2xl p-4">
+      <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+        Trade {token.symbol}
+      </h3>
 
-  if (!connected) {
-    return (
-      <div className="glass rounded-2xl p-4">
-        <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Trade {token.symbol}</h3>
-        <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5 text-center">
-          <Wallet className="mx-auto size-6 text-violet-300" />
-          <p className="text-sm text-muted-foreground">Connect a simulated wallet to buy or sell {token.symbol}.</p>
-          <Button className="glow-violet h-11 w-full" onClick={handleConnect} disabled={connecting}>
-            {connecting ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
-            {connecting ? "Connecting…" : "Connect wallet"}
-          </Button>
-          <p className="text-[11px] text-muted-foreground">Simulated wallet — no real funds.</p>
-        </div>
+      <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5 text-center">
+        <Wallet className="mx-auto size-6 text-violet-300" />
+
+        <p className="text-sm text-muted-foreground">
+          Connect Phantom to view your wallet connection. Trading is still
+          simulated until real on-chain transactions are implemented.
+        </p>
+
+        <WalletMultiButton className="!h-11 !w-full !justify-center !rounded-lg" />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="glass rounded-2xl p-4">

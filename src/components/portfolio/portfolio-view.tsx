@@ -26,6 +26,10 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+
+
 
 const VIOLET = "#8b5cf6";
 const CYAN = "#22d3ee";
@@ -35,7 +39,9 @@ const AMBER = "#fbbf24";
 const PALETTE = [VIOLET, CYAN, PINK, GREEN, AMBER, "#f87171"];
 
 export function PortfolioView() {
-  const { wallet, connectWallet, navigate, user } = useApp();
+  const { navigate, user } = useApp();
+  const { publicKey } = useWallet();
+  const walletAddress = publicKey?.toBase58() ?? null;
   const { toast } = useToast();
   const [data, setData] = useState<PortfolioDTO | null>(null);
   const [loading, setLoading] = useState(true);
