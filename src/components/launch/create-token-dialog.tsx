@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import type { FormEvent } from "react";
@@ -21,6 +21,8 @@ import { post } from "@/lib/api";
 import { LAUNCH_FEE_SOL } from "@/lib/bonding";
 import { sol } from "@/lib/format";
 import type { TokenDTO } from "@/lib/types";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const PRESETS = [
   { src: "/media/token-quantum-cat.jpg", label: "Quantum Cat" },
@@ -41,6 +43,7 @@ export function CreateTokenDialog({
   onCreated: (t: TokenDTO) => void;
 }) {
   const { toast } = useToast();
+  const { connected, publicKey } = useWallet();
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
@@ -55,6 +58,23 @@ export function CreateTokenDialog({
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canSubmit) return;
+
+    if (!connected || !publicKey) {
+      toast({
+        title: "Connect your Solana wallet",
+        description: "Connect Phantom before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Real Pump.fun launch is not ready",
+      description: "Your wallet is connected, but the real Pump.fun transaction adapter is not implemented yet. No token was created and no funds were sent.",
+      variant: "destructive",
+    });
+    return;
+
     setPending(true);
     try {
       const data = await post<{ token: TokenDTO }>("/api/tokens", {
@@ -76,7 +96,7 @@ export function CreateTokenDialog({
     } catch (err) {
       toast({
         title: "Launch failed",
-        description: err instanceof Error ? err.message : "Something went wrong on the simulated route.",
+        description: err instanceof Error ? String(err) : "Something went wrong on the simulated route.",
         variant: "destructive",
       });
     } finally {
@@ -93,9 +113,19 @@ export function CreateTokenDialog({
             Launch a Token
           </DialogTitle>
           <DialogDescription>
-            Mint a simulated SPL-style token on the bonding curve. Everything is devnet-grade simulation — no real funds.
+            Mint a simulated SPL-style token on the bonding curve. Everything is devnet-grade simulation Ã¢â‚¬â€ no real funds.
           </DialogDescription>
         </DialogHeader>
+
+        <section className="space-y-2 rounded-xl border border-white/10 p-3">
+          <p className="text-sm font-medium">Solana wallet</p>
+          <WalletMultiButton className="!h-10 !w-full !justify-center !rounded-lg" />
+          <p className="text-xs text-muted-foreground">
+            {connected && publicKey
+              ? `Connected: ${publicKey.toBase58().slice(0, 6)}...${publicKey.toBase58().slice(-6)}`
+              : "Connect Phantom to continue."}
+          </p>
+        </section>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
@@ -200,7 +230,7 @@ export function CreateTokenDialog({
             </Button>
             <Button type="submit" disabled={!canSubmit} className="glow-violet h-11 min-w-36">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Rocket className="size-4" />}
-              {pending ? "Launching…" : "Launch Token"}
+              {pending ? "LaunchingÃ¢â‚¬Â¦" : "Launch Token"}
             </Button>
           </DialogFooter>
         </form>
@@ -208,3 +238,5 @@ export function CreateTokenDialog({
     </Dialog>
   );
 }
+
+

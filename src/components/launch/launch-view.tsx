@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -48,7 +48,7 @@ const RULES = [
   {
     icon: Wallet,
     title: "Flat launch fee",
-    text: "0.02 SOL to launch, itemized as a fee receipt — no hidden costs.",
+    text: "0.02 SOL to launch, itemized as a fee receipt â€” no hidden costs.",
   },
   {
     icon: Percent,
@@ -152,14 +152,14 @@ export function LaunchView() {
             <Badge className="border-violet-400/40 bg-violet-500/20 text-violet-200">AHE Market</Badge>
             <Badge variant="outline" className="border-amber-400/40 text-amber-200">
               {statusUnavailable
-                ? "Status unavailable · launches locked"
+                ? "Status unavailable Â· launches locked"
                 : marketplaceStatus
                   ? marketplaceStatus.environment === "simulation"
-                    ? "Simulation · database-backed"
+                    ? "Simulation Â· database-backed"
                     : marketplaceStatus.environment === "invalid"
-                      ? "Invalid environment · launches locked"
-                      : `${marketplaceStatus.environment} · real transactions disabled`
-                  : "Checking environment…"}
+                      ? "Invalid environment Â· launches locked"
+                      : `${marketplaceStatus.environment} Â· real transactions disabled`
+                  : "Checking environmentâ€¦"}
             </Badge>
           </div>
           <h1 className="display-2 mt-4">
@@ -172,7 +172,7 @@ export function LaunchView() {
             <Button
               className="glow-violet h-11"
               onClick={() => setCreateOpen(true)}
-              disabled={!marketplaceStatus || !marketplaceStatus.launchesEnabled}
+              
             >
               <Rocket className="size-4" />
               Create a Token
@@ -287,7 +287,7 @@ export function LaunchView() {
           <Button
             className="glow-violet mx-auto h-11"
             onClick={() => setCreateOpen(true)}
-            disabled={!marketplaceStatus || !marketplaceStatus.launchesEnabled}
+            
           >
             <Rocket className="size-4" />
             Create a Token
@@ -324,7 +324,7 @@ export function LaunchView() {
           ))}
         </div>
         <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-          Everything on this page runs on a simulated devnet with fake SOL. No real funds are ever at risk — figures are for
+          Everything on this page runs on a simulated devnet with fake SOL. No real funds are ever at risk â€” figures are for
           product demonstration only.
         </p>
       </section>
@@ -333,3 +333,4 @@ export function LaunchView() {
     </div>
   );
 }
+
