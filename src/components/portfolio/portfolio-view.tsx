@@ -59,7 +59,7 @@ export function PortfolioView() {
 
   useEffect(() => {
     load();
-  }, [load, wallet.address]);
+  }, [load, walletAddress]);
 
   const copyAddress = () => {
     if (data?.address) {
@@ -85,7 +85,7 @@ export function PortfolioView() {
         </Button>
       </div>
 
-      {!wallet.address && !loading && (
+      {!walletAddress && !loading && (
         <div className="glass flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
           <span className="glow-violet flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 text-primary">
             <Wallet className="h-7 w-7" />
@@ -94,9 +94,7 @@ export function PortfolioView() {
           <p className="max-w-md text-sm text-muted-foreground">
             Simulated connection — we never request seed phrases or private keys. Your holdings from the Launch Arena will show up here.
           </p>
-          <Button onClick={() => connectWallet()} className="glow-violet mt-1 h-11 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">
-            <Wallet className="mr-2 h-4 w-4" /> Connect wallet
-          </Button>
+          <WalletMultiButton className="!h-11 !w-full !rounded-xl !bg-primary !px-6 !font-semibold !text-primary-foreground" />
         </div>
       )}
 
@@ -122,9 +120,9 @@ export function PortfolioView() {
                   ≈ {sol(data?.solBalance ?? 0, 3)} liquid · {holdings.length} positions
                 </p>
 
-                {wallet.address && (
+                {walletAddress && (
                   <button onClick={copyAddress} className="mt-4 flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 font-mono text-[11px] text-muted-foreground transition hover:text-foreground" aria-label="Copy wallet address">
-                    {shortAddr(wallet.address)} <Copy className="h-3 w-3" />
+                    {shortAddr(walletAddress)} <Copy className="h-3 w-3" />
                   </button>
                 )}
 
