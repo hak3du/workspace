@@ -236,7 +236,6 @@ export function TradePanel({
       mintSupply: sellState.bondingCurve.tokenTotalSupply,
       bondingCurve: sellState.bondingCurve,
       amount: amountRaw,
-      quoteMint: PublicKey.default,
     });
     if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
     const instructions = await PUMP_SDK.sellInstructions({
