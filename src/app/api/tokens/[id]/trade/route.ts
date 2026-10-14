@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { botTrade, curveProgress, fakeTxSig, solOut, spotPrice, tokensOut, BOT_LABELS, TOTAL_SUPPLY } from "@/lib/bonding";
 import { SOL_USD } from "@/lib/format";
+import { isSimulationMode } from "@/lib/marketplace/config";
 import type { TokenDTO, TradeDTO, UserDTO } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -70,6 +71,19 @@ function solLabel(n: number): string {
 //   curve amounts (effectiveSol in / solGross out) so the constant-product
 //   invariant keeps holding.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // This route mutates only the simulated curve and emits synthetic signatures.
+  // Refuse all writes outside simulation mode until wallet signing, on-chain
+  // execution, fee sharing, confirmation and reconciliation are implemented.
+  if (!isSimulationMode()) {
+    return NextResponse.json(
+      {
+        error: "Real trades are not enabled yet. No Solana transaction was submitted.",
+        code: "PUMPFUN_ADAPTER_NOT_IMPLEMENTED",
+      },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   try {
     const { id } = await params;
     const user = await getSessionUser();

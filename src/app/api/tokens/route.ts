@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { curveProgress, fakeMint, fakeTxSig, spotPrice, LAUNCH_FEE_SOL, TOTAL_SUPPLY } from "@/lib/bonding";
+import { isSimulationMode } from "@/lib/marketplace/config";
 import { SOL_USD } from "@/lib/format";
 import type { TokenDTO, UserDTO } from "@/lib/types";
 
@@ -48,9 +49,23 @@ export async function GET(req: NextRequest) {
     const user = await getSessionUser();
     const sp = req.nextUrl.searchParams;
     const q = (sp.get("q") || "").trim();
-    const sort = sp.get("sort") || "new";
-    const tab = sp.get("tab") || "terminal";
+    const sortRaw = sp.get("sort") || "new";
+    const tabRaw = sp.get("tab") || "terminal";
     const limitRaw = parseInt(sp.get("limit") || "24", 10);
+
+    // Reject unsupported filters rather than silently returning a misleading feed.
+    if (q.length > 80) {
+      return NextResponse.json({ error: "Search query must be 80 characters or fewer" }, { status: 400 });
+    }
+    const allowedSorts = ["new", "progress", "mcap", "trades"] as const;
+    if (!allowedSorts.includes(sortRaw as typeof allowedSorts[number])) {
+      return NextResponse.json({ error: "sort must be new, progress, mcap, or trades" }, { status: 400 });
+    }
+    if (!["terminal", "following", "created"].includes(tabRaw)) {
+      return NextResponse.json({ error: "tab must be terminal, following, or created" }, { status: 400 });
+    }
+    const sort = sortRaw;
+    const tab = tabRaw;
     const limit = Math.max(1, Math.min(Number.isNaN(limitRaw) ? 24 : limitRaw, 96));
 
     // Never label the global feed as "Following". Until follow relationships are
@@ -93,6 +108,18 @@ export async function GET(req: NextRequest) {
 
 // POST /api/tokens — launch a new token on the bonding curve.
 export async function POST(req: NextRequest) {
+  // The legacy implementation below creates synthetic mints/signatures and must
+  // never run in devnet/mainnet mode. Fail closed until a real adapter is merged.
+  if (!isSimulationMode()) {
+    return NextResponse.json(
+      {
+        error: "Real token launches are not enabled yet. No Solana transaction was submitted.",
+        code: "PUMPFUN_ADAPTER_NOT_IMPLEMENTED",
+      },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   try {
     const user = await getSessionUser();
     const body = (await req.json().catch(() => null)) as
@@ -104,7 +131,22 @@ export async function POST(req: NextRequest) {
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
     const description = typeof body.description === "string" ? body.description.trim() : "";
-    const imageUrl = typeof body.imageUrl === "string" && body.imageUrl.trim() ? body.imageUrl.trim() : null;
+    const imageUrlRaw = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
+    let imageUrl: string | null = null;
+    if (imageUrlRaw) {
+      if (imageUrlRaw.length > 2048) {
+        return NextResponse.json({ error: "Image URL must be 2048 characters or fewer" }, { status: 400 });
+      }
+      try {
+        const parsedImageUrl = new URL(imageUrlRaw);
+        if (parsedImageUrl.protocol !== "https:" && parsedImageUrl.protocol !== "http:") {
+          return NextResponse.json({ error: "Image URL must use HTTP or HTTPS" }, { status: 400 });
+        }
+        imageUrl = parsedImageUrl.toString();
+      } catch {
+        return NextResponse.json({ error: "Image URL must be a valid HTTP or HTTPS URL" }, { status: 400 });
+      }
+    }
 
     if (name.length < 2 || name.length > 32) {
       return NextResponse.json({ error: "Name must be 2-32 characters" }, { status: 400 });

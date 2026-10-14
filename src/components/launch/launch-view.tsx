@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -30,7 +30,10 @@ type Tab = "terminal" | "following" | "created";
 type Sort = "new" | "progress" | "mcap" | "trades";
 type MarketplaceStatus = {
   dataSource: "database";
-  environment: "simulation";
+  environment: "simulation" | "devnet" | "mainnet" | "invalid";
+  launchesEnabled: boolean;
+  realTransactionsEnabled: boolean;
+  productionReady: boolean;
   counts: { tokens: number; trades: number };
   integrations: {
     wallet: string;
@@ -45,7 +48,7 @@ const RULES = [
   {
     icon: Wallet,
     title: "Flat launch fee",
-    text: "0.02 SOL to launch, itemized as a fee receipt — no hidden costs.",
+    text: "0.02 SOL to launch, itemized as a fee receipt â€” no hidden costs.",
   },
   {
     icon: Percent,
@@ -148,7 +151,15 @@ export function LaunchView() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="border-violet-400/40 bg-violet-500/20 text-violet-200">AHE Market</Badge>
             <Badge variant="outline" className="border-amber-400/40 text-amber-200">
-              {statusUnavailable ? "Status unavailable" : marketplaceStatus ? "Simulation · database-backed" : "Checking environment…"}
+              {statusUnavailable
+                ? "Status unavailable Â· launches locked"
+                : marketplaceStatus
+                  ? marketplaceStatus.environment === "simulation"
+                    ? "Simulation Â· database-backed"
+                    : marketplaceStatus.environment === "invalid"
+                      ? "Invalid environment Â· launches locked"
+                      : `${marketplaceStatus.environment} Â· real transactions disabled`
+                  : "Checking environmentâ€¦"}
             </Badge>
           </div>
           <h1 className="display-2 mt-4">
@@ -158,7 +169,11 @@ export function LaunchView() {
             Explore database-backed token listings and marketplace activity. Wallet, Pump.fun launches, and AHE attestations are not connected yet; launch and trade figures remain simulation-only.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button className="glow-violet h-11" onClick={() => setCreateOpen(true)}>
+            <Button
+              className="glow-violet h-11"
+              onClick={() => setCreateOpen(true)}
+              
+            >
               <Rocket className="size-4" />
               Create a Token
             </Button>
@@ -269,7 +284,11 @@ export function LaunchView() {
                 ? "Follow relationships are not implemented yet. We will show this feed only when it can be populated from real follow data."
                 : "Try a different search, or be the one who fills the void."}
           </p>
-          <Button className="glow-violet mx-auto h-11" onClick={() => setCreateOpen(true)}>
+          <Button
+            className="glow-violet mx-auto h-11"
+            onClick={() => setCreateOpen(true)}
+            
+          >
             <Rocket className="size-4" />
             Create a Token
           </Button>
@@ -305,7 +324,7 @@ export function LaunchView() {
           ))}
         </div>
         <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-          Everything on this page runs on a simulated devnet with fake SOL. No real funds are ever at risk — figures are for
+          Everything on this page runs on a simulated devnet with fake SOL. No real funds are ever at risk â€” figures are for
           product demonstration only.
         </p>
       </section>
@@ -314,3 +333,4 @@ export function LaunchView() {
     </div>
   );
 }
+

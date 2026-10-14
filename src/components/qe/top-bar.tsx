@@ -1,4 +1,6 @@
-"use client";
+﻿"use client";
+
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -182,7 +184,7 @@ function SearchOverlay() {
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search everything — tokens, media, Spaces, creators, docs…"
+            placeholder="Search everything â€” tokens, media, Spaces, creators, docsâ€¦"
             className="h-14 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
             onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
           />
@@ -244,17 +246,17 @@ function SearchOverlay() {
 /* ---------------- Top bar ---------------- */
 
 export function TopBar() {
-  const { user, wallet, connectWallet, disconnectWallet, setSearchOpen, setAiOpen, navigate } = useApp();
+  const { user, setSearchOpen, setAiOpen, navigate } = useApp();
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6">
-        <button onClick={() => navigate({ name: "discover" })} className="flex items-center gap-2.5 focus:outline-none" aria-label="Quantum Launchpad home">
+        <button onClick={() => navigate({ name: "discover" })} className="flex items-center gap-2.5 focus:outline-none" aria-label="Quantum Leap home">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white shadow-[0_0_18px_rgba(139,92,246,0.5)]">
             <Sparkles className="h-5 w-5" />
           </span>
           <span className="hidden text-lg font-extrabold tracking-tight sm:block">
-            QUANTUM<span className="text-gradient"> LAUNCHPAD</span>
+            QUANTUM<span className="text-gradient"> LEAP</span>
           </span>
         </button>
 
@@ -264,7 +266,7 @@ export function TopBar() {
           aria-label="Open global search"
         >
           <Search className="h-4 w-4" />
-          <span className="flex-1 text-left">Search everything…</span>
+          <span className="flex-1 text-left">Search everythingâ€¦</span>
           <kbd className="flex items-center gap-0.5 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium">
             <Command className="h-3 w-3" /> K
           </kbd>
@@ -294,32 +296,14 @@ export function TopBar() {
 
         <NotificationsMenu />
 
-        {wallet.address ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate({ name: "portfolio" })}
-              className="glass hidden h-11 items-center gap-2 rounded-xl px-3 text-xs font-medium transition hover:border-primary/40 sm:flex"
-              aria-label="Open portfolio"
-            >
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              {shortAddr(wallet.address)}
-            </button>
-            <Button variant="ghost" size="sm" className="hidden h-11 rounded-xl px-2 text-xs text-muted-foreground lg:block" onClick={disconnectWallet}>
-              Disconnect
-            </Button>
-          </div>
-        ) : (
-          <Button onClick={() => connectWallet()} className="glow-violet h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-            <Wallet className="mr-2 h-4 w-4" /> Connect
-          </Button>
-        )}
+        <WalletMultiButton className="!h-11 !rounded-xl !bg-primary !px-4 !text-sm !font-semibold" />
 
         <button
           onClick={() => navigate({ name: "portfolio" })}
           className="ml-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           aria-label="Your profile"
         >
-          <EmojiAvatar emoji={user?.avatarEmoji ?? "🛸"} color={user?.avatarColor ?? "#8b5cf6"} size={38} ring />
+          <EmojiAvatar emoji={user?.avatarEmoji ?? "ðŸ›¸"} color={user?.avatarColor ?? "#8b5cf6"} size={38} ring />
         </button>
       </div>
       <SearchOverlay />
@@ -342,3 +326,4 @@ function KeyboardShortcut() {
   }, [setSearchOpen]);
   return null;
 }
+
