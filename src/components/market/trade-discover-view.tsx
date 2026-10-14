@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, ChartNoAxesCombined, CircleAlert, Loader2, Search, ShieldCheck, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { TradePanel } from "@/components/launch/trade-panel";
 import type { TokenDTO } from "@/lib/types";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -93,6 +94,7 @@ export function TradeDiscoverView() {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState("");
   const [chartUpdatedAt, setChartUpdatedAt] = useState<string | null>(null);
+  const [chartOpen, setChartOpen] = useState(false);
 
   async function loadDiscoverables(query = "") {
     setDiscoverLoading(true);
@@ -118,8 +120,7 @@ export function TradeDiscoverView() {
 
   useEffect(() => {
     if (marketToken) {
-      document.getElementById("market-token-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setSelectionStatus("Token loaded. On-chain verification and market data are shown below.");
+      setSelectionStatus("Token loaded. Open the chart from the coin card to inspect live price data.");
     }
   }, [marketToken]);
 
@@ -275,6 +276,9 @@ export function TradeDiscoverView() {
                   setMintInput(coin.mint);
                   setSelectedMint(coin.mint);
                   setSelectionStatus("Loading " + coin.name + " (" + coin.symbol + ")…");
+                  setChartOpen(true);
+                  setChartCandles([]);
+                  setChartError("");
                   setError("");
                   void openMint(coin.mint).then(() => {
                     // openMint owns the verified result/error state; this message keeps the click visibly acknowledged.
@@ -390,84 +394,7 @@ export function TradeDiscoverView() {
             </div>
           </section>
 
-          <section className="glass overflow-hidden rounded-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-2"><ChartNoAxesCombined className="size-5 text-violet-300" /><h2 className="font-semibold">Live PQC Market price chart</h2></div>
-              <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1" aria-label="Chart timeframe">
-                {(["1H", "1D", "1W", "1M"] as const).map((range) => (
-                  <button
-                    key={range}
-                    type="button"
-                    onClick={() => setChartRange(range)}
-                    aria-pressed={chartRange === range}
-                    className={"rounded-md px-2.5 py-1 text-xs transition " + (chartRange === range ? "bg-violet-400/20 text-violet-100" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    {range}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="px-4 pb-4 pt-3">
-              {chartError && (
-                <div role="status" className="mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-100">
-                  <CircleAlert className="mt-0.5 size-4 shrink-0" />
-                  <span>{chartError}</span>
-                </div>
-              )}
-              {chartLoading && !chartCandles.length ? (
-                <div className="flex h-[360px] items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> Fetching live candles from PQC Market…
-                </div>
-              ) : chartCandles.length ? (
-                <div className="h-[360px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartCandles} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
-                      <defs>
-                        <linearGradient id="pqcPriceFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.34} />
-                          <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.01} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="t"
-                        tickFormatter={(value) => new Date(Number(value) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        stroke="rgba(255,255,255,0.35)"
-                        tick={{ fontSize: 11 }}
-                        minTickGap={28}
-                      />
-                      <YAxis
-                        domain={["auto", "auto"]}
-                        tickFormatter={(value) => "$" + Number(value).toPrecision(3)}
-                        stroke="rgba(255,255,255,0.35)"
-                        tick={{ fontSize: 11 }}
-                        width={76}
-                      />
-                      <Tooltip
-                        labelFormatter={(value) => new Date(Number(value) * 1000).toLocaleString()}
-                        formatter={(value) => ["$" + Number(value).toPrecision(8), "Price"]}
-                        contentStyle={{ background: "#111018", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, fontSize: 12 }}
-                      />
-                      <Area type="monotone" dataKey="c" name="Price" stroke="#a78bfa" strokeWidth={2} fill="url(#pqcPriceFill)" dot={false} activeDot={{ r: 4 }} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : !chartError ? (
-                <div className="flex h-[360px] flex-col items-center justify-center text-center">
-                  <CircleAlert className="mb-3 size-7 text-muted-foreground" />
-                  <h3 className="font-semibold">No candles returned</h3>
-                  <p className="mt-2 max-w-lg text-sm text-muted-foreground">PQC Market has no candle data for this mint and timeframe yet.</p>
-                </div>
-              ) : (
-                <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">Waiting for the next PQC Market refresh…</div>
-              )}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>Live source: pqc.market · refreshes every 30 seconds</span>
-                <span>{chartUpdatedAt ? "Updated " + new Date(chartUpdatedAt).toLocaleTimeString() : "Waiting for first data point"}</span>
-              </div>
-              {marketToken.pairUrl && <a className="mt-2 inline-flex items-center gap-1 text-xs text-violet-300 hover:text-violet-200" href={marketToken.pairUrl} target="_blank" rel="noreferrer">Open market pair <ArrowUpRight className="size-3.5" /></a>}
-            </div>
-          </section>
+
 
           {!LIVE_TRADING_ENABLED ? (
             <section className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-5">
@@ -492,6 +419,107 @@ export function TradeDiscoverView() {
           <p className="text-xs text-muted-foreground">Market data source: Dexscreener. Last checked {new Date(marketToken.fetchedAt).toLocaleString()}.</p>
         </div>
       )}
+
+      <Dialog open={chartOpen} onOpenChange={setChartOpen}>
+        <DialogContent className="w-[calc(100%-1rem)] max-w-5xl max-h-[92vh] overflow-y-auto border-white/10 bg-[#0d0b14] p-0 text-foreground sm:rounded-2xl">
+          <div className="border-b border-white/10 px-5 py-4 pr-12">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <ChartNoAxesCombined className="size-5 text-violet-300" />
+              {marketToken?.name || discoverables.find((coin) => coin.mint === selectedMint)?.name || "Token"} live chart
+            </DialogTitle>
+            <DialogDescription className="mt-1 break-all text-xs text-muted-foreground">
+              Live price candles fetched from PQC Market. This chart opens in the coin view, not below the Discoverables list.
+            </DialogDescription>
+          </div>
+          <div className="p-3 sm:p-5">
+            {!marketToken ? (
+              <div className="flex h-[320px] items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> Verifying token and loading PQC Market chart…
+              </div>
+            ) : (
+              <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+                <div className="flex items-center gap-2"><ChartNoAxesCombined className="size-5 text-violet-300" /><h2 className="font-semibold">Live PQC Market price chart</h2></div>
+                <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1" aria-label="Chart timeframe">
+                {(["1H", "1D", "1W", "1M"] as const).map((range) => (
+                <button
+                key={range}
+                type="button"
+                onClick={() => setChartRange(range)}
+                aria-pressed={chartRange === range}
+                className={"rounded-md px-2.5 py-1 text-xs transition " + (chartRange === range ? "bg-violet-400/20 text-violet-100" : "text-muted-foreground hover:text-foreground")}
+                >
+                {range}
+                </button>
+                ))}
+                </div>
+                </div>
+                <div className="px-4 pb-4 pt-3">
+                {chartError && (
+                <div role="status" className="mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-100">
+                <CircleAlert className="mt-0.5 size-4 shrink-0" />
+                <span>{chartError}</span>
+                </div>
+                )}
+                {chartLoading && !chartCandles.length ? (
+                <div className="flex h-[360px] items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> Fetching live candles from PQC Market…
+                </div>
+                ) : chartCandles.length ? (
+                <div className="h-[360px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartCandles} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
+                <defs>
+                <linearGradient id="pqcPriceFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.34} />
+                <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.01} />
+                </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                dataKey="t"
+                tickFormatter={(value) => new Date(Number(value) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                stroke="rgba(255,255,255,0.35)"
+                tick={{ fontSize: 11 }}
+                minTickGap={28}
+                />
+                <YAxis
+                domain={["auto", "auto"]}
+                tickFormatter={(value) => "$" + Number(value).toPrecision(3)}
+                stroke="rgba(255,255,255,0.35)"
+                tick={{ fontSize: 11 }}
+                width={76}
+                />
+                <Tooltip
+                labelFormatter={(value) => new Date(Number(value) * 1000).toLocaleString()}
+                formatter={(value) => ["$" + Number(value).toPrecision(8), "Price"]}
+                contentStyle={{ background: "#111018", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, fontSize: 12 }}
+                />
+                <Area type="monotone" dataKey="c" name="Price" stroke="#a78bfa" strokeWidth={2} fill="url(#pqcPriceFill)" dot={false} activeDot={{ r: 4 }} />
+                </AreaChart>
+                </ResponsiveContainer>
+                </div>
+                ) : !chartError ? (
+                <div className="flex h-[360px] flex-col items-center justify-center text-center">
+                <CircleAlert className="mb-3 size-7 text-muted-foreground" />
+                <h3 className="font-semibold">No candles returned</h3>
+                <p className="mt-2 max-w-lg text-sm text-muted-foreground">PQC Market has no candle data for this mint and timeframe yet.</p>
+                </div>
+                ) : (
+                <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">Waiting for the next PQC Market refresh…</div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>Live source: pqc.market · refreshes every 30 seconds</span>
+                <span>{chartUpdatedAt ? "Updated " + new Date(chartUpdatedAt).toLocaleTimeString() : "Waiting for first data point"}</span>
+                </div>
+                {marketToken.pairUrl && <a className="mt-2 inline-flex items-center gap-1 text-xs text-violet-300 hover:text-violet-200" href={marketToken.pairUrl} target="_blank" rel="noreferrer">Open market pair <ArrowUpRight className="size-3.5" /></a>}
+                </div>
+              </section>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </main>
   );
 }
