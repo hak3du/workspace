@@ -56,6 +56,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
   const [tokenBalanceRaw, setTokenBalanceRaw] = useState("0");
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
+  const [quoteRefreshNonce, setQuoteRefreshNonce] = useState(0);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -155,7 +156,13 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [amount, connected, decimals, mint, parsedMint, publicKey, rawAmount, side]);
+  }, [amount, connected, decimals, mint, parsedMint, publicKey, rawAmount, side, quoteRefreshNonce]);
+
+  useEffect(() => {
+    if (!order || !connected || pending) return;
+    const timer = setTimeout(() => setQuoteRefreshNonce((value) => value + 1), 12_000);
+    return () => clearTimeout(timer);
+  }, [order, connected, pending]);
 
   async function execute() {
     if (!ENABLED) throw new Error("Real swaps are disabled. Enable NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING in the Production environment.");
