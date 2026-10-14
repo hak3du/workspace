@@ -121,6 +121,12 @@ export function TradePanel({
         setQuoteLoading(false);
         return;
       }
+      if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta") {
+        setBuyQuote(null);
+        setQuoteError("Real Pump trading is blocked unless NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta.");
+        setQuoteLoading(false);
+        return;
+      }
       setQuoteLoading(true);
       setQuoteError(null);
       try {
@@ -185,6 +191,7 @@ export function TradePanel({
   }
 
   async function handleLiveTrade() {
+    if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta") throw new Error("Live Pump trading is blocked unless NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta.");
     if (!connected || !publicKey || !mint) throw new Error("Connect a Solana wallet and use a valid token mint.");
     const curve = await sdk.fetchBondingCurve(mint);
     if (curve.complete) {
