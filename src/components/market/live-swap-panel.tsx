@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 const WSOL_MINT = "So11111111111111111111111111111111111111112";
-const ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
+const ENABLED = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" && process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "false";
 const SLIPPAGE_BPS = 100;
 
 type Order = {
@@ -240,7 +240,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
 
   if (!ENABLED) {
     return <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm text-amber-100">
-      Real swaps are code-gated. Set <code>NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING=true</code> for Vercel Production only after configuring and testing the Jupiter route.
+      Real swaps are disabled for this deployment. Configure <code>NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta</code> and ensure <code>NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING</code> is not set to <code>false</code>.
     </div>;
   }
   if (!connected) {
