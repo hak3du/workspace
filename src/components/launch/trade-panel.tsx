@@ -180,12 +180,7 @@ export function TradePanel({
       feePayer: publicKey,
       recentBlockhash: latest.blockhash,
     }).add(...instructions);
-    const simulation = await connection.simulateTransaction(
-      transaction,
-      [],
-      undefined,
-      { commitment: "confirmed", sigVerify: false },
-    );
+    const simulation = await connection.simulateTransaction(transaction);
     if (simulation.value.err) {
       const logs = simulation.value.logs?.slice(-4).join(" | ");
       throw new Error("Pump transaction simulation failed; nothing was sent. " + JSON.stringify(simulation.value.err) + (logs ? " Logs: " + logs : ""));
