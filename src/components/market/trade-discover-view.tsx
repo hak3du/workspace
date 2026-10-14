@@ -201,15 +201,16 @@ export function TradeDiscoverView() {
       if (!response.ok) throw new Error(payload.error || "Unable to load this token.");
       setMarketToken(payload);
 
-      const symbol = (payload.symbol || symbolInput.trim() || "TOKEN").toUpperCase().slice(0, 12);
+      const listedCoin = discoverables.find((coin) => coin.mint === payload.mint);
+      const symbol = (payload.symbol || symbolInput.trim() || listedCoin?.symbol || "TOKEN").toUpperCase().slice(0, 12);
       setToken({
         id: "external-" + payload.mint,
-        name: payload.name || "Verified Solana token",
+        name: payload.name || listedCoin?.name || "Verified Solana token",
         symbol,
         description: "Mint verified on-chain. Market metrics are supplied by Dexscreener when an indexed pair is available.",
         imageUrl: null,
         mint: payload.mint,
-        status: "BONDING",
+        status: payload.pumpCurveAvailable && payload.pumpCurveComplete ? "MIGRATED" : "BONDING",
         priceSol: payload.priceSol ?? 0,
         marketCapUsd: payload.marketCapUsd ?? 0,
         progress: 0,
