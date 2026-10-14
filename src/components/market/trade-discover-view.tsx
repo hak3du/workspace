@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TradePanel } from "@/components/launch/trade-panel";
 import type { TokenDTO } from "@/lib/types";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const LIVE_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 
@@ -20,6 +21,15 @@ type DiscoverableCoin = {
   complete: boolean;
   graduated: boolean;
   source: string;
+};
+
+type PQCCandle = { t: number; o: number; h: number; l: number; c: number; v: number };
+type PQCChartPayload = {
+  candles?: PQCCandle[];
+  candlesOk?: boolean;
+  error?: string;
+  fetchedAt?: string;
+  source?: string;
 };
 
 type MarketToken = {
@@ -78,6 +88,11 @@ export function TradeDiscoverView() {
   const [discoverError, setDiscoverError] = useState("");
   const [selectedMint, setSelectedMint] = useState("");
   const [selectionStatus, setSelectionStatus] = useState("");
+  const [chartRange, setChartRange] = useState<"1H" | "1D" | "1W" | "1M">("1D");
+  const [chartCandles, setChartCandles] = useState<PQCCandle[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartError, setChartError] = useState("");
+  const [chartUpdatedAt, setChartUpdatedAt] = useState<string | null>(null);
 
   async function loadDiscoverables(query = "") {
     setDiscoverLoading(true);
@@ -107,6 +122,59 @@ export function TradeDiscoverView() {
       setSelectionStatus("Token loaded. On-chain verification and market data are shown below.");
     }
   }, [marketToken]);
+
+  useEffect(() => {
+    const mint = marketToken?.mint;
+    if (!mint) {
+      setChartCandles([]);
+      setChartError("");
+      setChartUpdatedAt(null);
+      return;
+    }
+
+    let cancelled = false;
+    let inFlight = false;
+    const loadChart = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      if (!chartCandles.length) setChartLoading(true);
+      try {
+        const response = await fetch(
+          "/api/market/pqc-chart?mint=" + encodeURIComponent(mint) + "&range=" + chartRange,
+          { cache: "no-store" },
+        );
+        const payload = await response.json() as PQCChartPayload;
+        if (!response.ok) throw new Error(payload.error || "PQC Market could not return this chart.");
+        if (cancelled) return;
+        const nextCandles = Array.isArray(payload.candles)
+          ? payload.candles.filter((item) =>
+              Number.isFinite(item.t) && Number.isFinite(item.o) && Number.isFinite(item.h) &&
+              Number.isFinite(item.l) && Number.isFinite(item.c) && Number.isFinite(item.v))
+          : [];
+        setChartCandles(nextCandles);
+        setChartUpdatedAt(payload.fetchedAt || new Date().toISOString());
+        setChartError(!payload.candlesOk && !nextCandles.length
+          ? "PQC Market is temporarily unable to fetch candles for this mint. The chart will retry automatically."
+          : "");
+      } catch (chartLoadError) {
+        if (!cancelled) setChartError(chartLoadError instanceof Error ? chartLoadError.message : "Unable to load the PQC Market chart.");
+      } finally {
+        inFlight = false;
+        if (!cancelled) setChartLoading(false);
+      }
+    };
+
+    setChartCandles([]);
+    setChartError("");
+    void loadChart();
+    const interval = setInterval(() => void loadChart(), 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // chart refresh is scoped to the selected mint and selected timeframe.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketToken?.mint, chartRange]);
 
   async function openMint(mintOverride?: string) {
     const mint = (mintOverride ?? mintInput).trim();
@@ -323,26 +391,82 @@ export function TradeDiscoverView() {
           </section>
 
           <section className="glass overflow-hidden rounded-2xl">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-2"><ChartNoAxesCombined className="size-5 text-violet-300" /><h2 className="font-semibold">Price chart</h2></div>
-              {marketToken.pairUrl && <a className="inline-flex items-center gap-1 text-xs text-violet-300 hover:text-violet-200" href={marketToken.pairUrl} target="_blank" rel="noreferrer">Open market <ArrowUpRight className="size-3.5" /></a>}
-            </div>
-            {marketToken.chartUrl ? (
-              <iframe
-                title={"Dexscreener chart for " + (marketToken.symbol || marketToken.mint)}
-                src={marketToken.chartUrl}
-                className="h-[420px] w-full border-0 sm:h-[520px]"
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                allow="clipboard-write"
-              />
-            ) : (
-              <div className="flex min-h-64 flex-col items-center justify-center px-6 py-12 text-center">
-                <CircleAlert className="mb-3 size-7 text-amber-300" />
-                <h3 className="font-semibold">No indexed chart available</h3>
-                <p className="mt-2 max-w-xl text-sm text-muted-foreground">{marketToken.message || "A market pair was not returned for this mint, so a chart cannot be displayed yet."}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+              <div className="flex items-center gap-2"><ChartNoAxesCombined className="size-5 text-violet-300" /><h2 className="font-semibold">Live PQC Market price chart</h2></div>
+              <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1" aria-label="Chart timeframe">
+                {(["1H", "1D", "1W", "1M"] as const).map((range) => (
+                  <button
+                    key={range}
+                    type="button"
+                    onClick={() => setChartRange(range)}
+                    aria-pressed={chartRange === range}
+                    className={"rounded-md px-2.5 py-1 text-xs transition " + (chartRange === range ? "bg-violet-400/20 text-violet-100" : "text-muted-foreground hover:text-foreground")}
+                  >
+                    {range}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+            <div className="px-4 pb-4 pt-3">
+              {chartError && (
+                <div role="status" className="mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-100">
+                  <CircleAlert className="mt-0.5 size-4 shrink-0" />
+                  <span>{chartError}</span>
+                </div>
+              )}
+              {chartLoading && !chartCandles.length ? (
+                <div className="flex h-[360px] items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" /> Fetching live candles from PQC Market…
+                </div>
+              ) : chartCandles.length ? (
+                <div className="h-[360px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartCandles} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
+                      <defs>
+                        <linearGradient id="pqcPriceFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.34} />
+                          <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.01} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="t"
+                        tickFormatter={(value) => new Date(Number(value) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        stroke="rgba(255,255,255,0.35)"
+                        tick={{ fontSize: 11 }}
+                        minTickGap={28}
+                      />
+                      <YAxis
+                        domain={["auto", "auto"]}
+                        tickFormatter={(value) => "$" + Number(value).toPrecision(3)}
+                        stroke="rgba(255,255,255,0.35)"
+                        tick={{ fontSize: 11 }}
+                        width={76}
+                      />
+                      <Tooltip
+                        labelFormatter={(value) => new Date(Number(value) * 1000).toLocaleString()}
+                        formatter={(value) => ["$" + Number(value).toPrecision(8), "Price"]}
+                        contentStyle={{ background: "#111018", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, fontSize: 12 }}
+                      />
+                      <Area type="monotone" dataKey="c" name="Price" stroke="#a78bfa" strokeWidth={2} fill="url(#pqcPriceFill)" dot={false} activeDot={{ r: 4 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : !chartError ? (
+                <div className="flex h-[360px] flex-col items-center justify-center text-center">
+                  <CircleAlert className="mb-3 size-7 text-muted-foreground" />
+                  <h3 className="font-semibold">No candles returned</h3>
+                  <p className="mt-2 max-w-lg text-sm text-muted-foreground">PQC Market has no candle data for this mint and timeframe yet.</p>
+                </div>
+              ) : (
+                <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">Waiting for the next PQC Market refresh…</div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>Live source: pqc.market · refreshes every 30 seconds</span>
+                <span>{chartUpdatedAt ? "Updated " + new Date(chartUpdatedAt).toLocaleTimeString() : "Waiting for first data point"}</span>
+              </div>
+              {marketToken.pairUrl && <a className="mt-2 inline-flex items-center gap-1 text-xs text-violet-300 hover:text-violet-200" href={marketToken.pairUrl} target="_blank" rel="noreferrer">Open market pair <ArrowUpRight className="size-3.5" /></a>}
+            </div>
           </section>
 
           {!LIVE_TRADING_ENABLED ? (
