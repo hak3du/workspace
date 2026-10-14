@@ -3,111 +3,96 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type PumpCoin = {
+type PqcLaunch = {
   mint?: string;
-  address?: string;
   name?: string;
   symbol?: string;
-  description?: string;
-  image_uri?: string;
-  imageUri?: string;
-  usd_market_cap?: number;
-  market_cap?: number;
-  marketCap?: number;
-  virtual_sol_reserves?: number;
-  complete?: boolean;
-  created_timestamp?: number;
-  raydium_pool?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  created_at?: string | null;
+  launched_at?: string | null;
 };
 
-function normalize(payload: unknown): PumpCoin[] {
-  if (Array.isArray(payload)) return payload as PumpCoin[];
-  if (!payload || typeof payload !== "object") return [];
-  const value = payload as { coins?: unknown; data?: unknown; results?: unknown };
-  for (const candidate of [value.coins, value.data, value.results]) {
-    if (Array.isArray(candidate)) return candidate as PumpCoin[];
-  }
-  return [];
-}
+type PqcMarketStats = {
+  marketCap?: number | null;
+  curve?: { complete?: boolean | null } | null;
+};
 
 export async function GET(request: NextRequest) {
   const query = (request.nextUrl.searchParams.get("q") || "").trim().slice(0, 80);
-  const limit = query ? 30 : 24;
-  const params = new URLSearchParams({
-    offset: "0",
-    limit: String(limit),
-    sort: query ? "market_cap" : "created_timestamp",
-    order: "DESC",
-    includeNsfw: "false",
-    searchTerm: query,
-    creator: "",
-    complete: "false",
-    meta: "",
-    type: "fuzzy",
-  });
+  const upstreamUrl = new URL("https://pqc.market/api/launches");
+  upstreamUrl.searchParams.set("offset", "0");
+  if (query) upstreamUrl.searchParams.set("q", query);
 
-  const endpoints = query
-    ? ["https://frontend-api-v3.pump.fun/coins/search?" + params.toString()]
-    : [
-        "https://frontend-api-v3.pump.fun/coins/featured/1h?limit=24&offset=0&includeNsfw=false",
-        "https://frontend-api-v3.pump.fun/coins/latest",
-        "https://frontend-api-v3.pump.fun/coins?" + params.toString(),
-      ];
-
-  let lastStatus = 502;
-  for (const endpoint of endpoints) {
-    try {
-      const response = await fetch(endpoint, {
-        headers: { accept: "application/json" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!response.ok) {
-        lastStatus = response.status;
-        continue;
-      }
-      const coins = normalize(await response.json())
-        .map((coin) => ({
-          mint: coin.mint || coin.address || "",
-          name: coin.name || "Unnamed token",
-          symbol: coin.symbol || "TOKEN",
-          description: coin.description || "",
-          imageUrl: coin.image_uri || coin.imageUri || null,
-          marketCapUsd: Number.isFinite(coin.usd_market_cap)
-            ? coin.usd_market_cap
-            : Number.isFinite(coin.market_cap)
-              ? coin.market_cap
-              : Number.isFinite(coin.marketCap)
-                ? coin.marketCap
-                : null,
-          createdAt: coin.created_timestamp ?? null,
-          complete: coin.complete ?? false,
-          graduated: Boolean(coin.complete || coin.raydium_pool),
-          source: "Pump.fun",
-        }))
-        .filter((coin) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(coin.mint))
-        .slice(0, limit);
-
-      if (coins.length || query) {
-        return NextResponse.json(
-          { coins, query, source: "Pump.fun", fetchedAt: new Date().toISOString() },
-          { headers: { "Cache-Control": "no-store" } },
-        );
-      }
-    } catch {
-      // Try the next public listing endpoint if this one is unavailable.
+  try {
+    const response = await fetch(upstreamUrl.toString(), {
+      headers: { accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    const payload = await response.json().catch(() => ({})) as { launches?: PqcLaunch[]; error?: string };
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: payload.error || "PQC Market listings are temporarily unavailable.", coins: [], query, source: "pqc.market" },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
     }
-  }
 
-  return NextResponse.json(
-    {
-      error: query
-        ? "Pump.fun search is temporarily unavailable. Try the full mint address in Load token."
-        : "Pump.fun discovery is temporarily unavailable. You can still load a token by mint address.",
-      upstreamStatus: lastStatus,
-      coins: [],
-      query,
-    },
-    { status: 502, headers: { "Cache-Control": "no-store" } },
-  );
+    const launches = Array.isArray(payload.launches) ? payload.launches : [];
+    const mints = launches
+      .map((coin) => coin.mint || "")
+      .filter((mint) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint))
+      .slice(0, 48);
+
+    let stats: Record<string, PqcMarketStats> = {};
+    if (mints.length) {
+      try {
+        const marketResponse = await fetch(
+          "https://pqc.market/api/market?mints=" + encodeURIComponent(mints.join(",")),
+          { headers: { accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(8_000) },
+        );
+        if (marketResponse.ok) {
+          const marketPayload = await marketResponse.json() as { tokens?: Record<string, PqcMarketStats> };
+          stats = marketPayload.tokens || {};
+        }
+      } catch {
+        // Listing remains useful when the optional live market snapshot is busy.
+      }
+    }
+
+    const coins = launches
+      .filter((coin): coin is PqcLaunch & { mint: string } => Boolean(coin.mint && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(coin.mint)))
+      .slice(0, 48)
+      .map((coin) => ({
+        mint: coin.mint,
+        name: coin.name || "Unnamed token",
+        symbol: coin.symbol || "TOKEN",
+        description: coin.description || "",
+        imageUrl: coin.image_url || null,
+        marketCapUsd: stats[coin.mint]?.marketCap ?? null,
+        createdAt: coin.launched_at || coin.created_at
+          ? Math.floor(new Date(coin.launched_at || coin.created_at || "").getTime())
+          : null,
+        complete: Boolean(stats[coin.mint]?.curve?.complete),
+        graduated: Boolean(stats[coin.mint]?.curve?.complete),
+        source: "PQC Market",
+      }));
+
+    return NextResponse.json(
+      { coins, query, source: "pqc.market", fetchedAt: new Date().toISOString() },
+      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error && error.name === "TimeoutError"
+          ? "PQC Market discovery timed out. Retry shortly."
+          : "Could not connect to the PQC Market discovery service.",
+        coins: [],
+        query,
+        source: "pqc.market",
+      },
+      { status: 502, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
