@@ -43,6 +43,21 @@ export function TradePanel({
   const { connected, publicKey, sendTransaction } = useWallet();
   const sdk = useMemo(() => new OnlinePumpSdk(connection), [connection]);
 
+  async function resolveBaseTokenProgram(tokenMint: PublicKey): Promise<PublicKey> {
+    const mintAccount = await connection.getAccountInfo(tokenMint, "confirmed");
+    if (!mintAccount) {
+      throw new Error("Token mint account was not found on the selected Solana network.");
+    }
+    const owner = mintAccount.owner.toBase58();
+    if (
+      owner !== "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" &&
+      owner !== "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+    ) {
+      throw new Error("Mint is not owned by the SPL Token or Token-2022 program.");
+    }
+    return mintAccount.owner;
+  }
+
   const [side, setSide] = useState<"BUY" | "SELL">("BUY");
   const [amount, setAmount] = useState("");
   const [percent, setPercent] = useState(50);
@@ -111,8 +126,9 @@ export function TradePanel({
         const curve = await sdk.fetchBondingCurve(mint);
         if (curve.complete) throw new Error("This token has graduated. AMM routing is not enabled in this first trading slice.");
         if (!curve.quoteMint.equals(PublicKey.default)) throw new Error("This first live trading slice supports SOL-quoted Pump bonding curves only.");
+        const tokenProgram = await resolveBaseTokenProgram(mint);
         const [buyState, global, feeConfig] = await Promise.all([
-          sdk.fetchBuyState(mint, publicKey),
+          sdk.fetchBuyState(mint, publicKey, tokenProgram),
           sdk.fetchGlobal(),
           sdk.fetchFeeConfig(),
         ]);
@@ -177,11 +193,13 @@ export function TradePanel({
       throw new Error("This first live trading slice supports SOL-quoted Pump bonding curves only.");
     }
 
+    const tokenProgram = await resolveBaseTokenProgram(mint);
+
     if (side === "BUY") {
       if (!Number.isFinite(amt) || amt < 0.01 || amt > 100) throw new Error("Buy between 0.01 and 100 SOL.");
       const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
       const [buyState, global, feeConfig] = await Promise.all([
-        sdk.fetchBuyState(mint, publicKey),
+        sdk.fetchBuyState(mint, publicKey, tokenProgram),
         sdk.fetchGlobal(),
         sdk.fetchFeeConfig(),
       ]);
@@ -203,14 +221,14 @@ export function TradePanel({
         amount: tokenAmount,
         solAmount,
         slippage: 5,
-        tokenProgram: buyState.tokenProgram,
+        tokenProgram,
       });
       return await sendAndConfirm(instructions);
     }
 
     if (realSellRaw <= BigInt(0)) throw new Error("No on-chain token balance available to sell.");
     const amountRaw = new BN(realSellRaw.toString());
-    const sellState = await sdk.fetchSellState(mint, publicKey);
+    const sellState = await sdk.fetchSellState(mint, publicKey, tokenProgram);
     const [global, feeConfig] = await Promise.all([sdk.fetchGlobal(), sdk.fetchFeeConfig()]);
     const expectedSol = getSellSolAmountFromTokenAmount({
       global,
@@ -230,8 +248,7 @@ export function TradePanel({
       amount: amountRaw,
       solAmount: expectedSol,
       slippage: 5,
-      tokenProgram: sellState.tokenProgram,
-      mayhemMode: sellState.bondingCurve.isMayhemMode,
+      tokenProgram,
     });
     return await sendAndConfirm(instructions);
   }
