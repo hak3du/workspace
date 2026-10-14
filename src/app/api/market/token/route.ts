@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PublicKey, clusterApiUrl, type Cluster } from "@solana/web3.js";
+import { Connection, PublicKey, clusterApiUrl, type Cluster } from "@solana/web3.js";
+import { OnlinePumpSdk } from "@pump-fun/pump-sdk";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -74,6 +75,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "This account is not a standard SPL Token or Token-2022 mint." }, { status: 422 });
     }
 
+    let pumpCurveAvailable = false;
+    let pumpCurveComplete: boolean | null = null;
+    let pumpSolQuoted: boolean | null = null;
+    let pumpQuoteMint: string | null = null;
+    try {
+      const pumpSdk = new OnlinePumpSdk(new Connection(rpcEndpoint, "confirmed"));
+      const curve = await pumpSdk.fetchBondingCurve(new PublicKey(mint));
+      pumpCurveAvailable = true;
+      pumpCurveComplete = Boolean(curve.complete);
+      pumpQuoteMint = curve.quoteMint.toBase58();
+      pumpSolQuoted = curve.quoteMint.equals(PublicKey.default) ||
+        curve.quoteMint.toBase58() === "So11111111111111111111111111111111111111112";
+    } catch {
+      // Not every SPL mint has a Pump bonding curve; Jupiter may still route it.
+    }
+
     let pairs: DexPair[] = [];
     try {
       const marketResponse = await fetch(
@@ -105,6 +122,10 @@ export async function GET(request: NextRequest) {
       network: cluster,
       verifiedOnChain: true,
       tokenProgram: account.owner,
+      pumpCurveAvailable,
+      pumpCurveComplete,
+      pumpSolQuoted,
+      pumpQuoteMint,
       name: tokenInfo?.name || null,
       symbol: tokenInfo?.symbol || null,
       priceUsd: pair?.priceUsd ? Number(pair.priceUsd) : null,
