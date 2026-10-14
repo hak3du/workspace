@@ -234,7 +234,7 @@ export function TradeDiscoverView() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-6">
       <div className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">AHE Market · Solana</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Trade a Pump.fun token</h1>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Discover & trade PQC Market tokens</h1>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
           Load a mint to verify it on the selected Solana network and retrieve market data when an indexed trading pair is available.
         </p>
@@ -243,12 +243,12 @@ export function TradeDiscoverView() {
       <section className="glass mb-6 rounded-2xl p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Pump.fun explorer</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">PQC Market explorer</p>
             <h2 className="mt-1 text-xl font-semibold">Discoverables</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Browse live Pump.fun listings or search by name and ticker. Select a coin to load its mint into the market verifier.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Browse live listings from the PQC Market server. Search by name or ticker, then select a coin to load its live chart and market verification.</p>
           </div>
           <form className="flex w-full gap-2 sm:max-w-md" onSubmit={(event) => { event.preventDefault(); void loadDiscoverables(discoverSearch); }}>
-            <Input value={discoverSearch} onChange={(event) => setDiscoverSearch(event.target.value)} placeholder="Search coins or symbols…" aria-label="Search Pump.fun coins" />
+            <Input value={discoverSearch} onChange={(event) => setDiscoverSearch(event.target.value)} placeholder="Search PQC Market coins…" aria-label="Search PQC Market coins" />
             <Button type="submit" variant="secondary" disabled={discoverLoading}>
               {discoverLoading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
               <span className="sr-only">Search discoverables</span>
@@ -328,7 +328,7 @@ export function TradeDiscoverView() {
           </div>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>Source: Pump.fun listings. Market cap is shown only when supplied by the source.</span>
+          <span>Source: PQC Market live listings and market snapshot. Charts are fetched separately from the PQC Market server.</span>
           <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={() => { setDiscoverSearch(""); void loadDiscoverables(""); }}>Latest discoverables</button>
         </div>
       </section>
