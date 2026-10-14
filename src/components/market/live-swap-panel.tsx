@@ -67,7 +67,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     try { return new PublicKey(mint); } catch { return null; }
   }, [mint]);
   const sellRaw = useMemo(() => {
-    try { return ((BigInt(tokenBalanceRaw) * BigInt(percent)) / 100n).toString(); } catch { return "0"; }
+    try { return ((BigInt(tokenBalanceRaw) * BigInt(percent)) / BigInt("100")).toString(); } catch { return "0"; }
   }, [tokenBalanceRaw, percent]);
   const rawAmount = useMemo(() => {
     if (side === "SELL") return sellRaw;
@@ -96,7 +96,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
         const mintDecimals = parsed && typeof parsed === "object"
           ? Number((parsed as { info?: { decimals?: unknown } }).info?.decimals)
           : NaN;
-        let raw = 0n;
+        let raw = BigInt("0");
         let accountDecimals = Number.isInteger(mintDecimals) ? mintDecimals : null;
         for (const item of tokenAccounts.value) {
           const info = item.account.data.parsed.info;
@@ -226,7 +226,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
         connection.getParsedTokenAccountsByOwner(publicKey, { mint: parsedMint }, "confirmed"),
         connection.getBalance(publicKey, "confirmed"),
       ]);
-      let raw = 0n;
+      let raw = BigInt("0");
       for (const item of tokenAccounts.value) raw += BigInt(item.account.data.parsed.info.tokenAmount.amount as string);
       setTokenBalanceRaw(raw.toString());
       setSolBalance(lamports / 1_000_000_000);
