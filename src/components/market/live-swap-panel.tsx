@@ -260,7 +260,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     <section className="rounded-xl border border-violet-400/20 bg-violet-400/[0.035] p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div><h3 className="font-semibold">Live swap</h3><p className="text-xs text-muted-foreground">Jupiter route · wallet-signed · 1.00% slippage limit</p></div>
-        <span className="rounded-full border border-emerald-400/30 px-2 py-1 text-[10px] text-emerald-200">MAINNET SWAPS</span>
+        <span className="rounded-full border border-emerald-400/30 px-2 py-1 text-[10px] text-emerald-200">MAINNET ONLY</span>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <Button type="button" variant={side === "BUY" ? "default" : "outline"} onClick={() => { setSide("BUY"); setError(""); setNotice(""); }}>Buy</Button>
