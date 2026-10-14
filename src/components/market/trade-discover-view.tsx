@@ -101,7 +101,7 @@ export function TradeDiscoverView() {
     try {
       const response = await fetch("/api/market/discover" + (query.trim() ? "?q=" + encodeURIComponent(query.trim()) : ""), { cache: "no-store" });
       const payload = await response.json() as { coins?: DiscoverableCoin[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || "Unable to load Pump.fun discoverables.");
+      if (!response.ok) throw new Error(payload.error || "Unable to load PQC Market discoverables.");
       setDiscoverables(payload.coins || []);
     } catch (loadError) {
       setDiscoverables([]);
@@ -264,7 +264,7 @@ export function TradeDiscoverView() {
         )}
 
         {discoverLoading ? (
-          <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading Pump.fun listings…</div>
+          <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading PQC Market listings…</div>
         ) : discoverables.length ? (
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {discoverables.map((coin) => (
@@ -482,6 +482,20 @@ export function TradeDiscoverView() {
                 <Area type="monotone" dataKey="c" name="Price" stroke="#a78bfa" strokeWidth={2} fill="url(#pqcPriceFill)" dot={false} activeDot={{ r: 4 }} />
                 </AreaChart>
                 </ResponsiveContainer>
+                </div>
+                ) : marketToken.chartUrl ? (
+                <div className="space-y-2">
+                  <div className="flex h-[360px] w-full overflow-hidden rounded-lg border border-white/10 bg-black">
+                    <iframe
+                      title={marketToken.name ? marketToken.name + " market chart fallback" : "Market chart fallback"}
+                      src={marketToken.chartUrl}
+                      className="h-full w-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      allow="fullscreen"
+                    />
+                  </div>
+                  <p className="text-center text-[11px] text-muted-foreground">PQC Market candles are unavailable for this pair/timeframe. Showing the indexed market chart fallback; this is not the PQC Market candle feed.</p>
                 </div>
                 ) : !chartError ? (
                 <div className="flex h-[360px] flex-col items-center justify-center text-center">
