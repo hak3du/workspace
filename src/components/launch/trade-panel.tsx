@@ -172,7 +172,7 @@ export function TradePanel({
         user: publicKey,
         amount: quote.tokensOut,
         solAmount,
-        slippage: 0.05,
+        slippage: 5,
       });
       return await sendAndConfirm(instructions);
     }
@@ -191,7 +191,7 @@ export function TradePanel({
       user: publicKey,
       amount: amountRaw,
       solAmount: expectedSol,
-      slippage: 0.05,
+      slippage: 5,
     });
     return await sendAndConfirm(instructions);
   }
