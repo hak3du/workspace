@@ -20,7 +20,6 @@ const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
 const REAL_PUMP_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 const TOKEN_DECIMALS_FALLBACK = 6;
-const WRAPPED_SOL_MINT = new PublicKey("So11111111111111111111111111111111111111112");
 
 interface TradeResponse {
   trade: TradeDTO;
@@ -111,6 +110,7 @@ export function TradePanel({
       try {
         const curve = await sdk.fetchBondingCurve(mint);
         if (curve.complete) throw new Error("This token has graduated. AMM routing is not enabled in this first trading slice.");
+        if (!curve.quoteMint.equals(PublicKey.default)) throw new Error("This first live trading slice supports SOL-quoted Pump bonding curves only.");
         const [buyState, global, feeConfig] = await Promise.all([
           sdk.fetchBuyState(mint, publicKey),
           sdk.fetchGlobal(),
@@ -123,12 +123,12 @@ export function TradePanel({
           mintSupply: buyState.bondingCurve.tokenTotalSupply,
           bondingCurve: buyState.bondingCurve,
           amount: solAmount,
-          quoteMint: WRAPPED_SOL_MINT,
         });
-        const spot = Number(buyState.bondingCurve.virtualSolReserves.toString()) /
+        if (tokensOut.lte(new BN(0))) throw new Error("Pump SDK returned a zero-token quote.");
+        const spot = Number(buyState.bondingCurve.virtualQuoteReserves.toString()) /
           Number(buyState.bondingCurve.virtualTokenReserves.toString());
-        const effectivePrice = Number(solAmount.toString()) / LAMPORTS_PER_SOL /
-          (Number(tokensOut.toString()) / 10 ** TOKEN_DECIMALS_FALLBACK);
+        // Both prices are lamports per raw token unit, so their ratio is dimensionless.
+        const effectivePrice = Number(solAmount.toString()) / Number(tokensOut.toString());
         if (active) {
           setBuyQuote({
             tokensOut: tokensOut.toString(),
@@ -172,6 +172,9 @@ export function TradePanel({
     if (curve.complete) {
       throw new Error("This token has graduated. Graduated PumpAMM routing is the next integration; this first live path supports bonding-curve tokens only.");
     }
+    if (!curve.quoteMint.equals(PublicKey.default)) {
+      throw new Error("This first live trading slice supports SOL-quoted Pump bonding curves only.");
+    }
 
     if (side === "BUY") {
       if (!Number.isFinite(amt) || amt < 0.01 || amt > 100) throw new Error("Buy between 0.01 and 100 SOL.");
@@ -187,7 +190,6 @@ export function TradePanel({
         mintSupply: buyState.bondingCurve.tokenTotalSupply,
         bondingCurve: buyState.bondingCurve,
         amount: solAmount,
-        quoteMint: WRAPPED_SOL_MINT,
       });
       const instructions = await sdk.buyInstructions({
         ...buyState,
@@ -210,7 +212,6 @@ export function TradePanel({
       mintSupply: sellState.bondingCurve.tokenTotalSupply,
       bondingCurve: sellState.bondingCurve,
       amount: amountRaw,
-      quoteMint: WRAPPED_SOL_MINT,
     });
     if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
     const instructions = await sdk.sellInstructions({
