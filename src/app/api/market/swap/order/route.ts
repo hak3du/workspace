@@ -4,7 +4,6 @@ import { PublicKey } from "@solana/web3.js";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const MINT_SOL = "So11111111111111111111111111111111111111112";
 const VALID_AMOUNT = /^[1-9][0-9]{0,39}$/;
 
 export async function GET(request: NextRequest) {
