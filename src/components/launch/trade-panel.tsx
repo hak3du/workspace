@@ -7,8 +7,6 @@ import { OnlinePumpSdk } from "@pump-fun/pump-sdk";
 import {
   LAMPORTS_PER_SOL,
   PublicKey,
-  TransactionMessage,
-  VersionedTransaction,
 } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -52,7 +50,7 @@ export function TradePanel({
 }) {
   const { toast } = useToast();
   const { connection } = useConnection();
-  const { connected, publicKey, sendTransaction } = useWallet();
+  const { connected, publicKey } = useWallet();
   const sdk = useMemo(() => new OnlinePumpSdk(connection), [connection]);
 
   const [side, setSide] = useState<"BUY" | "SELL">("BUY");
@@ -102,50 +100,23 @@ export function TradePanel({
       try {
         const mint = new PublicKey(token.mint);
         const bondingCurve = await sdk.fetchBondingCurve(mint);
-        const graduated = bondingCurve.complete;
-        let quote: OnChainQuote;
 
-        if (side === "BUY") {
-          const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
-          const result = graduated
-            ? await sdk.ammQuoteBuy({ mint, user: publicKey, quoteAmountIn: solAmount })
-            : await sdk.quoteBuy({ mint, user: publicKey, solAmount });
-
-          quote = {
-            outputAmount: Number(result.tokensOut.toString()) / (10 ** TOKEN_DECIMALS),
-            feesSol: Number(result.feesLamports.toString()) / LAMPORTS_PER_SOL,
-            priceImpactPct: "priceImpactBps" in result
-              ? result.priceImpactBps / 100
-              : null,
-          };
-        } else {
-          const balance = await sdk.getTokenBalance(mint, publicKey);
-          if (!active) return;
-          setWalletTokenBalance(balance.toString());
-
-          const tokenAmount = balance.muln(percent).divn(100);
-          if (tokenAmount.isZero()) {
-            setOnChainQuote(null);
-            setQuoteError("This wallet has no balance for this token on the selected network.");
-            return;
-          }
-
-          const result = graduated
-            ? await sdk.ammQuoteSell({ mint, user: publicKey, baseAmountIn: tokenAmount })
-            : await sdk.quoteSell({ mint, user: publicKey, amount: tokenAmount });
-
-          if ("willOverflow" in result && result.willOverflow) {
-            throw new Error("This sell amount exceeds the protocol's safe single-transaction limit.");
-          }
-
-          quote = {
-            outputAmount: Number(result.solOut.toString()) / LAMPORTS_PER_SOL,
-            feesSol: Number(result.feesLamports.toString()) / LAMPORTS_PER_SOL,
-            priceImpactPct: "priceImpactBps" in result
-              ? result.priceImpactBps / 100
-              : null,
-          };
+        // The installed official @pump-fun/pump-sdk v4 package exposes bonding-curve
+        // quotes here; graduated-token AMM quoting requires the separate pump-swap SDK.
+        if (bondingCurve.complete) {
+          throw new Error("This token has graduated. Live AMM quotes are not enabled yet.");
         }
+        if (side !== "BUY") {
+          throw new Error("Live sell quotes are not enabled until token-account balance handling is integrated.");
+        }
+
+        const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
+        const result = await sdk.quoteBuy({ mint, user: publicKey, solAmount });
+        const quote: OnChainQuote = {
+          outputAmount: Number(result.tokensOut.toString()) / (10 ** TOKEN_DECIMALS),
+          feesSol: Number(result.feesLamports.toString()) / LAMPORTS_PER_SOL,
+          priceImpactPct: result.priceImpactBps / 100,
+        };
 
         if (active) setOnChainQuote(quote);
       } catch {
@@ -191,86 +162,11 @@ export function TradePanel({
     }
 
     if (REAL_PUMP_TRADING_ENABLED) {
-      if (!onChainQuote || quoteLoading || quoteError) {
-        toast({
-          title: "Live quote unavailable",
-          description: quoteError ?? "Wait for a valid on-chain quote before signing.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let submittedSignature: string | null = null;
-      setPending(true);
-      try {
-        const mint = new PublicKey(token.mint);
-        const instructions = side === "BUY"
-          ? await sdk.routedBuyInstructions({
-              mint,
-              user: publicKey,
-              quoteAmountIn: new BN(Math.round(amt * LAMPORTS_PER_SOL)),
-              slippage: 1,
-            })
-          : await sdk.routedSellInstructions({
-              mint,
-              user: publicKey,
-              baseAmountIn: new BN(walletTokenBalance).muln(percent).divn(100),
-              slippage: 1,
-            });
-
-        if (!instructions.length) {
-          throw new Error("The protocol did not produce a transaction for this asset.");
-        }
-
-        const latest = await connection.getLatestBlockhash("confirmed");
-        const transaction = new VersionedTransaction(
-          new TransactionMessage({
-            payerKey: publicKey,
-            recentBlockhash: latest.blockhash,
-            instructions,
-          }).compileToV0Message()
-        );
-
-        submittedSignature = await sendTransaction(transaction, connection, {
-          skipPreflight: false,
-          preflightCommitment: "confirmed",
-        });
-
-        const confirmation = await connection.confirmTransaction(
-          { signature: submittedSignature, ...latest },
-          "confirmed"
-        );
-
-        if (confirmation.value.err) {
-          throw new Error("The network reported a failed transaction.");
-        }
-
-        const cluster = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "devnet"
-          ? "?cluster=devnet"
-          : process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "testnet"
-            ? "?cluster=testnet"
-            : "";
-        const explorerUrl = "https://explorer.solana.com/tx/" + submittedSignature + cluster;
-
-        toast({
-          title: side === "BUY" ? "Buy confirmed on Solana" : "Sell confirmed on Solana",
-          description: "Signature: " + submittedSignature + ". Explorer: " + explorerUrl,
-        });
-
-        if (side === "BUY") setAmount("");
-        setQuoteRefresh((value) => value + 1);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "The transaction could not be completed.";
-        toast({
-          title: submittedSignature ? "Transaction status needs checking" : "On-chain trade failed",
-          description: submittedSignature
-            ? message + " Check the signature before retrying: " + submittedSignature
-            : message + " No successful on-chain confirmation was received.",
-          variant: "destructive",
-        });
-      } finally {
-        setPending(false);
-      }
+      toast({
+        title: "Live trading not ready",
+        description: "This build currently supports a bonding-curve buy quote only. Live transaction submission, sells, and graduated-token AMM routing must be integrated and verified before enabling real trading.",
+        variant: "destructive",
+      });
       return;
     }
 
