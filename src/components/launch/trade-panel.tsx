@@ -248,6 +248,8 @@ export function TradePanel({
       solAmount: expectedSol,
       slippage: 5,
       tokenProgram,
+      mayhemMode: sellState.bondingCurve.isMayhemMode ?? false,
+      cashback: sellState.bondingCurve.isCashbackCoin ?? false,
     });
     return await sendAndConfirm(instructions);
   }
