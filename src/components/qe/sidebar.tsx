@@ -61,12 +61,6 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
         })}
       </nav>
 
-      <div className="px-3 pt-2">
-        <a href="/trade" className="flex w-full items-center justify-between rounded-xl border border-violet-400/20 bg-violet-500/5 px-3 py-2.5 text-sm font-medium text-violet-200 transition hover:bg-violet-500/10">
-          <span>Trade Pump.fun token</span><span aria-hidden="true">↗</span>
-        </a>
-      </div>
-
       <div className="p-3">
         <button
           onClick={() => {
