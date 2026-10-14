@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, ChartNoAxesCombined, CircleAlert, Loader2, Search, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowUpRight, ChartNoAxesCombined, CircleAlert, Loader2, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { LiveSwapPanel } from "@/components/market/live-swap-panel";
+import { TradePanel } from "@/components/launch/trade-panel";
 import type { TokenDTO } from "@/lib/types";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -49,6 +50,10 @@ type MarketToken = {
   pairUrl: string | null;
   chartUrl: string | null;
   marketDataAvailable: boolean;
+  pumpCurveAvailable: boolean;
+  pumpCurveComplete: boolean | null;
+  pumpSolQuoted: boolean | null;
+  pumpQuoteMint: string | null;
   message: string | null;
   fetchedAt: string;
 };
@@ -515,9 +520,18 @@ export function TradeDiscoverView() {
               </section>
             )}
           </div>
-          {marketToken && (
+          {marketToken && token && (
             <div className="border-t border-white/10 p-3 sm:p-5">
-              <LiveSwapPanel mint={marketToken.mint} symbol={marketToken.symbol || "TOKEN"} network={marketToken.network} />
+              {!LIVE_TRADING_ENABLED ? (
+                <LiveSwapPanel mint={marketToken.mint} symbol={marketToken.symbol || "TOKEN"} network={marketToken.network} />
+              ) : marketToken.pumpCurveAvailable && marketToken.pumpCurveComplete === false && marketToken.pumpSolQuoted ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Active Pump bonding curve · direct Pump SDK route</p>
+                  <TradePanel token={token} myHolding={null} onTraded={() => { void openMint(selectedMint); }} />
+                </div>
+              ) : (
+                <LiveSwapPanel mint={marketToken.mint} symbol={marketToken.symbol || "TOKEN"} network={marketToken.network} />
+              )}
             </div>
           )}
         </DialogContent>
