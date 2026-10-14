@@ -185,9 +185,10 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     setLastSignature("");
     try {
       const transaction = VersionedTransaction.deserialize(base64ToBytes(order.transaction));
+      const messageKeys = transaction.message.getAccountKeys().staticAccountKeys;
       const signerCount = transaction.message.header.numRequiredSignatures;
-      const signerKeys = transaction.message.staticAccountKeys.slice(0, signerCount);
-      if (!transaction.message.staticAccountKeys[0]?.equals(publicKey) || !signerKeys.some((key) => key.equals(publicKey))) {
+      const signerKeys = messageKeys.slice(0, signerCount);
+      if (!messageKeys[0]?.equals(publicKey) || !signerKeys.some((key) => key.equals(publicKey))) {
         throw new Error("The routed transaction does not identify your connected wallet as its fee payer and signer. Nothing was signed.");
       }
       const signed = await signTransaction(transaction);
