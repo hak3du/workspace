@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUpRight, ChartNoAxesCombined, CircleAlert, Loader2, Search, ShieldCheck, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,19 @@ import { TradePanel } from "@/components/launch/trade-panel";
 import type { TokenDTO } from "@/lib/types";
 
 const LIVE_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
+
+type DiscoverableCoin = {
+  mint: string;
+  name: string;
+  symbol: string;
+  description: string;
+  imageUrl: string | null;
+  marketCapUsd: number | null;
+  createdAt: number | null;
+  complete: boolean;
+  graduated: boolean;
+  source: string;
+};
 
 type MarketToken = {
   mint: string;
@@ -112,6 +125,77 @@ export default function TradePage() {
           Load a mint to verify it on the selected Solana network and retrieve market data when an indexed trading pair is available.
         </p>
       </div>
+
+      <section className="glass mb-6 rounded-2xl p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Pump.fun explorer</p>
+            <h2 className="mt-1 text-xl font-semibold">Discoverables</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Browse live Pump.fun listings or search by name and ticker. Select a coin to load its mint into the market verifier.</p>
+          </div>
+          <form className="flex w-full gap-2 sm:max-w-md" onSubmit={(event) => { event.preventDefault(); void loadDiscoverables(discoverSearch); }}>
+            <Input value={discoverSearch} onChange={(event) => setDiscoverSearch(event.target.value)} placeholder="Search coins or symbols…" aria-label="Search Pump.fun coins" />
+            <Button type="submit" variant="secondary" disabled={discoverLoading}>
+              {discoverLoading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
+              <span className="sr-only">Search discoverables</span>
+            </Button>
+          </form>
+        </div>
+
+        {discoverError && (
+          <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-100">
+            {discoverError}
+            <button type="button" className="ml-2 underline underline-offset-4" onClick={() => void loadDiscoverables(discoverSearch)}>Retry</button>
+          </div>
+        )}
+
+        {discoverLoading ? (
+          <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading Pump.fun listings…</div>
+        ) : discoverables.length ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {discoverables.map((coin) => (
+              <button
+                key={coin.mint}
+                type="button"
+                onClick={() => { setMintInput(coin.mint); void openMint(coin.mint); }}
+                className="group min-w-0 rounded-xl border border-white/10 bg-white/[0.025] p-4 text-left transition hover:border-violet-400/50 hover:bg-violet-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+              >
+                <div className="flex items-start gap-3">
+                  {coin.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={coin.imageUrl} alt="" loading="lazy" className="size-11 shrink-0 rounded-full bg-white/5 object-cover" />
+                  ) : (
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-violet-400/10 text-lg font-semibold text-violet-200">◎</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate font-semibold group-hover:text-violet-200">{coin.name}</h3>
+                      {coin.graduated && <span className="shrink-0 rounded-full border border-cyan-400/30 px-2 py-0.5 text-[10px] text-cyan-200">Graduated</span>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">${coin.symbol}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Market cap</p>
+                    <p className="mt-1 font-semibold tabular-nums">{money(coin.marketCapUsd)}</p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs text-violet-300">Load token <ArrowUpRight className="size-3.5" /></span>
+                </div>
+                <p className="mt-3 truncate font-mono text-[10px] text-muted-foreground">{coin.mint}</p>
+              </button>
+            ))}
+          </div>
+        ) : !discoverError ? (
+          <div className="mt-5 rounded-xl border border-white/10 px-4 py-8 text-center text-sm text-muted-foreground">
+            No listings matched this search. Try a different name or symbol, or paste a mint address below.
+          </div>
+        ) : null}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>Source: Pump.fun listings. Market cap is shown only when supplied by the source.</span>
+          <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={() => { setDiscoverSearch(""); void loadDiscoverables(""); }}>Latest discoverables</button>
+        </div>
+      </section>
 
       <section className="glass mb-6 rounded-2xl p-5">
         <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem_auto]" onSubmit={(event) => { event.preventDefault(); void openMint(); }}>
