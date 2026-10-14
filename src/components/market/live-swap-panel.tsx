@@ -210,6 +210,9 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
       const result = await response.json() as { status?: string; signature?: string; error?: string; errorCode?: string; executionUnknown?: boolean };
       if (!response.ok) {
         if (result.signature) setLastSignature(result.signature);
+        if (result.executionUnknown) {
+          throw new Error("Jupiter execution timed out and the outcome is unknown. Check your wallet activity and transaction history before attempting another swap.");
+        }
         throw new Error(result.error || "Swap execution failed. Check the signature before retrying.");
       }
       if (result.signature) setLastSignature(result.signature);
