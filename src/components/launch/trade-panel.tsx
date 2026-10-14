@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { post } from "@/lib/api";
 import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
-import { compact, priceLabel, sol } from "@/lib/format";
+import { compact, sol } from "@/lib/format";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
 import { OnlinePumpSdk } from "@pump-fun/pump-sdk";
 
@@ -64,7 +64,7 @@ export function TradePanel({
   const demoTokenIn = myHolding && myHolding.amount > 0 ? (myHolding.amount * percent) / 100 : 0;
   const demoSellReceive = (demoTokenIn > 0 ? solOut(demoState, demoTokenIn) : 0) * 0.99;
   const walletTokenAmount = Number(walletTokenRaw) / (10 ** walletTokenDecimals);
-  const realSellRaw = (BigInt(walletTokenRaw || "0") * BigInt(percent)) / 100n;
+  const realSellRaw = (BigInt(walletTokenRaw || "0") * BigInt(percent)) / BigInt(100);
 
   useEffect(() => {
     let active = true;
@@ -76,7 +76,7 @@ export function TradePanel({
       }
       try {
         const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint });
-        let raw = 0n;
+        let raw = BigInt(0);
         let decimals = TOKEN_DECIMALS_FALLBACK;
         for (const account of accounts.value) {
           const info = account.account.data.parsed.info;
@@ -177,7 +177,7 @@ export function TradePanel({
       return await sendAndConfirm(instructions);
     }
 
-    if (realSellRaw <= 0n) throw new Error("No on-chain token balance available to sell.");
+    if (realSellRaw <= BigInt(0)) throw new Error("No on-chain token balance available to sell.");
     const amountRaw = new BN(realSellRaw.toString());
     const sellState = await sdk.fetchSellState(mint, publicKey);
     const quote = await sdk.quoteSell({ mint, user: publicKey, amount: amountRaw, tokenProgram: sellState.tokenProgram }) as unknown as {
