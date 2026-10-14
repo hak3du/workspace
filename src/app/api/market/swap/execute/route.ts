@@ -1,0 +1,52 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function POST(request: NextRequest) {
+  let body: { signedTransaction?: unknown; requestId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON request." }, { status: 400 });
+  }
+
+  const signedTransaction = body.signedTransaction;
+  const requestId = body.requestId;
+  if (typeof signedTransaction !== "string" || signedTransaction.length < 80 ||
+      signedTransaction.length > 200_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(signedTransaction)) {
+    return NextResponse.json({ error: "A valid signed transaction in base64 is required." }, { status: 400 });
+  }
+  if (typeof requestId !== "string" || requestId.length < 8 || requestId.length > 256 || !/^[A-Za-z0-9_-]+$/.test(requestId)) {
+    return NextResponse.json({ error: "A valid Jupiter request ID is required." }, { status: 400 });
+  }
+
+  const apiKey = process.env.JUPITER_API_KEY;
+  const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
+  if (apiKey) headers["x-api-key"] = apiKey;
+
+  try {
+    const upstream = await fetch("https://api.jup.ag/swap/v2/execute", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ signedTransaction, requestId }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(35_000),
+    });
+    const payload = await upstream.json().catch(() => ({})) as Record<string, unknown>;
+    if (!upstream.ok) {
+      const message = typeof payload.error === "string" ? payload.error :
+        typeof payload.message === "string" ? payload.message : "Jupiter could not execute this signed transaction.";
+      return NextResponse.json({ error: message, source: "Jupiter", details: payload }, { status: upstream.status === 429 ? 429 : 502, headers: { "Cache-Control": "no-store" } });
+    }
+    return NextResponse.json({ ...payload, source: "Jupiter", receivedAt: new Date().toISOString() }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error && error.name === "TimeoutError"
+        ? "Jupiter execution timed out. Check the transaction signature before retrying to avoid submitting twice."
+        : "Could not reach Jupiter execution service. Check transaction status before retrying.",
+      source: "Jupiter",
+      executionUnknown: true,
+    }, { status: 502, headers: { "Cache-Control": "no-store" } });
+  }
+}
