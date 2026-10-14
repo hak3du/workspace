@@ -68,6 +68,7 @@ export function TradePanel({
   const [walletTokenRaw, setWalletTokenRaw] = useState("0");
   const [walletTokenDecimals, setWalletTokenDecimals] = useState(TOKEN_DECIMALS_FALLBACK);
   const [balanceRefresh, setBalanceRefresh] = useState(0);
+  const [lastSignature, setLastSignature] = useState("");
 
   const mint = useMemo(() => {
     try { return new PublicKey(token.mint); } catch { return null; }
@@ -279,6 +280,7 @@ export function TradePanel({
     try {
       if (REAL_PUMP_TRADING_ENABLED) {
         const signature = await handleLiveTrade();
+        setLastSignature(signature);
         toast({
           title: side === "BUY" ? "Buy confirmed on Solana" : "Sell confirmed on Solana",
           description: "Transaction confirmed. " + signature.slice(0, 8) + "…",
@@ -380,6 +382,7 @@ export function TradePanel({
         {pending && <Loader2 className="size-4 animate-spin" />}
         {pending ? (REAL_PUMP_TRADING_ENABLED ? "Waiting for Solana confirmation…" : "Recording demo…") : REAL_PUMP_TRADING_ENABLED ? (side === "BUY" ? "Buy on Solana" : "Sell on Solana") : (side === "BUY" ? "Record demo buy" : "Record demo sell")}
       </Button>
+      {lastSignature && <a className="mt-2 block break-all text-center text-xs text-violet-300 underline" href={"https://solscan.io/tx/" + encodeURIComponent(lastSignature)} target="_blank" rel="noreferrer">Inspect confirmed transaction on Solscan</a>}
       <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "Network fees and Pump protocol fees apply. No transaction is sent unless you approve it in your wallet." : "DEMO ONLY · no funds move"}</p>
     </div>
   );
