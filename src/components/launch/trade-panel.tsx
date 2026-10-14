@@ -14,7 +14,7 @@ import { post } from "@/lib/api";
 import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
 import { compact, sol } from "@/lib/format";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
-import { OnlinePumpSdk, PUMP_SDK, getBuyTokenAmountFromSolAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
+import { OnlinePumpSdk, PUMP_SDK, getBuyTokenAmountFromSolAmount, getBuySolAmountFromTokenAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -211,6 +211,22 @@ export function TradePanel({
         amount: solAmount,
         quoteMint: PublicKey.default,
       });
+      if (tokenAmount.lte(new BN(0))) {
+        throw new Error("Pump SDK returned no expected token output; no transaction was sent.");
+      }
+      // Convert the requested SOL budget into the precise curve cost for this token amount.
+      // This avoids treating the input budget as the exact execution cost after curve rounding.
+      const maxCost = getBuySolAmountFromTokenAmount({
+        global,
+        feeConfig,
+        mintSupply: buyState.bondingCurve.tokenTotalSupply,
+        bondingCurve: buyState.bondingCurve,
+        amount: tokenAmount,
+        quoteMint: PublicKey.default,
+      });
+      if (maxCost.lte(new BN(0)) || maxCost.gt(solAmount)) {
+        throw new Error("Pump SDK returned an invalid buy cost; no transaction was sent.");
+      }
       const instructions = await PUMP_SDK.buyInstructions({
         global,
         bondingCurveAccountInfo: buyState.bondingCurveAccountInfo,
@@ -219,7 +235,7 @@ export function TradePanel({
         mint,
         user: publicKey,
         amount: tokenAmount,
-        solAmount,
+        solAmount: maxCost,
         slippage: 5,
         tokenProgram,
       });
