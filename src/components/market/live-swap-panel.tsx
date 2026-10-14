@@ -186,6 +186,11 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     setLastSignature("");
     try {
       const transaction = VersionedTransaction.deserialize(base64ToBytes(order.transaction));
+      const simulation = await connection.simulateTransaction(transaction, { sigVerify: false, commitment: "confirmed" });
+      if (simulation.value.err) {
+        const logs = simulation.value.logs?.slice(-4).join(" | ");
+        throw new Error("Swap simulation failed; nothing was signed. " + JSON.stringify(simulation.value.err) + (logs ? " Logs: " + logs : ""));
+      }
       const messageKeys = transaction.message.getAccountKeys().staticAccountKeys;
       const signerCount = transaction.message.header.numRequiredSignatures;
       const signerKeys = messageKeys.slice(0, signerCount);
