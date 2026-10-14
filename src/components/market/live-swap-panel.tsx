@@ -191,9 +191,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
         const logs = simulation.value.logs?.slice(-4).join(" | ");
         throw new Error("Swap simulation failed; nothing was signed. " + JSON.stringify(simulation.value.err) + (logs ? " Logs: " + logs : ""));
       }
-      const messageKeys = "staticAccountKeys" in transaction.message
-        ? transaction.message.staticAccountKeys
-        : transaction.message.accountKeys;
+      const messageKeys = transaction.message.staticAccountKeys;
       const signerCount = transaction.message.header.numRequiredSignatures;
       const signerKeys = messageKeys.slice(0, signerCount);
       if (!messageKeys[0]?.equals(publicKey) || !signerKeys.some((key) => key.equals(publicKey))) {
