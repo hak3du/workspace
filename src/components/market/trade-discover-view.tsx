@@ -56,6 +56,15 @@ function price(value: number | null) {
   return "$" + value.toLocaleString("en-US", { maximumFractionDigits: 10 });
 }
 
+function usableImageUrl(value: string | null) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (trimmed.startsWith("ipfs://")) return "https://pump.mypinata.cloud/ipfs/" + trimmed.slice("ipfs://".length).replace(/^ipfs\//, "");
+  if (trimmed.startsWith("https://ipfs.io/ipfs/")) return trimmed.replace("https://ipfs.io/ipfs/", "https://pump.mypinata.cloud/ipfs/");
+  if (trimmed.startsWith("http://")) return "https://" + trimmed.slice("http://".length);
+  return /^https:\/\//i.test(trimmed) ? trimmed : null;
+}
+
 export function TradeDiscoverView() {
   const [mintInput, setMintInput] = useState("");
   const [symbolInput, setSymbolInput] = useState("");
@@ -67,6 +76,8 @@ export function TradeDiscoverView() {
   const [discoverables, setDiscoverables] = useState<DiscoverableCoin[]>([]);
   const [discoverLoading, setDiscoverLoading] = useState(true);
   const [discoverError, setDiscoverError] = useState("");
+  const [selectedMint, setSelectedMint] = useState("");
+  const [selectionStatus, setSelectionStatus] = useState("");
 
   async function loadDiscoverables(query = "") {
     setDiscoverLoading(true);
@@ -89,6 +100,13 @@ export function TradeDiscoverView() {
     // The initial listing request should run once when the trade page mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (marketToken) {
+      document.getElementById("market-token-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setSelectionStatus("Token loaded. On-chain verification and market data are shown below.");
+    }
+  }, [marketToken]);
 
   async function openMint(mintOverride?: string) {
     const mint = (mintOverride ?? mintInput).trim();
@@ -136,7 +154,9 @@ export function TradeDiscoverView() {
         lastTradeAt: payload.fetchedAt,
       });
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load this token.");
+      const message = loadError instanceof Error ? loadError.message : "Unable to load this token.";
+      setError(message);
+      if (mintOverride) setSelectionStatus("Could not load this coin: " + message);
     } finally {
       setLoading(false);
     }
@@ -183,16 +203,32 @@ export function TradeDiscoverView() {
               <button
                 key={coin.mint}
                 type="button"
-                onClick={() => { setMintInput(coin.mint); void openMint(coin.mint); }}
+                onClick={() => {
+                  setMintInput(coin.mint);
+                  setSelectedMint(coin.mint);
+                  setSelectionStatus("Loading " + coin.name + " (" + coin.symbol + ")…");
+                  setError("");
+                  void openMint(coin.mint).then(() => {
+                    // openMint owns the verified result/error state; this message keeps the click visibly acknowledged.
+                  });
+                }}
                 className="group min-w-0 rounded-xl border border-white/10 bg-white/[0.025] p-4 text-left transition hover:border-violet-400/50 hover:bg-violet-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
               >
                 <div className="flex items-start gap-3">
-                  {coin.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={coin.imageUrl} alt="" loading="lazy" className="size-11 shrink-0 rounded-full bg-white/5 object-cover" />
-                  ) : (
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-violet-400/10 text-lg font-semibold text-violet-200">◎</div>
-                  )}
+                  <div className="relative size-11 shrink-0 overflow-hidden rounded-full bg-violet-400/10">
+                    <div className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-violet-200">◎</div>
+                    {usableImageUrl(coin.imageUrl) && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={usableImageUrl(coin.imageUrl) ?? undefined}
+                        alt=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(event) => { event.currentTarget.style.display = "none"; }}
+                        className="relative size-11 rounded-full object-cover"
+                      />
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="truncate font-semibold group-hover:text-violet-200">{coin.name}</h3>
@@ -217,6 +253,12 @@ export function TradeDiscoverView() {
             No listings matched this search. Try a different name or symbol, or paste a mint address below.
           </div>
         ) : null}
+        {selectionStatus && (
+          <div aria-live="polite" className="mt-4 rounded-xl border border-violet-400/30 bg-violet-400/5 px-4 py-3 text-sm text-violet-100">
+            {selectionStatus}
+            {selectedMint && <span className="mt-1 block break-all font-mono text-xs text-muted-foreground">{selectedMint}</span>}
+          </div>
+        )}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>Source: Pump.fun listings. Market cap is shown only when supplied by the source.</span>
           <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={() => { setDiscoverSearch(""); void loadDiscoverables(""); }}>Latest discoverables</button>
@@ -239,7 +281,7 @@ export function TradeDiscoverView() {
       </section>
 
       {marketToken && token && (
-        <div className="space-y-6">
+        <div id="market-token-results" className="space-y-6 scroll-mt-6">
           <section className="glass rounded-2xl p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
