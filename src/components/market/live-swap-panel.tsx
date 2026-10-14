@@ -126,6 +126,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     const timeout = setTimeout(async () => {
       setOrder(null);
       setError("");
+      setQuoteLoading(false);
       if (!ENABLED || !connected || !publicKey || !parsedMint || decimals === null || !rawAmount || rawAmount === "0") return;
       if (network !== "mainnet-beta") {
         setError("Real swaps require NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta in this deployment.");
