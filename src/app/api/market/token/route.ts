@@ -83,16 +83,22 @@ export async function GET(request: NextRequest) {
       if (marketResponse.ok) {
         const marketPayload = await marketResponse.json() as { pairs?: DexPair[] | null };
         pairs = (marketPayload.pairs || [])
-          .filter((pair) => pair.chainId === "solana" && Boolean(pair.pairAddress))
+          .filter((pair) =>
+            pair.chainId === "solana" &&
+            Boolean(pair.pairAddress) &&
+            pair.baseToken?.address?.toLowerCase() === mint.toLowerCase()
+          )
           .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
       }
     } catch {
       // A valid on-chain mint can exist without a current Dexscreener listing.
     }
 
+    // Dexscreener's priceUsd/priceNative fields describe the pair's base token.
+    // Only use pairs where the requested mint is the base token to avoid showing
+    // the quote asset's price as though it belonged to the requested mint.
     const pair = pairs[0];
-    const mintIsBase = pair?.baseToken?.address?.toLowerCase() === mint.toLowerCase();
-    const tokenInfo = mintIsBase ? pair?.baseToken : pair?.quoteToken?.address?.toLowerCase() === mint.toLowerCase() ? pair?.quoteToken : pair?.baseToken;
+    const tokenInfo = pair?.baseToken;
 
     return NextResponse.json({
       mint,
