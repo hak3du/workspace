@@ -127,6 +127,10 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
       setOrder(null);
       setError("");
       if (!ENABLED || !connected || !publicKey || !parsedMint || decimals === null || !rawAmount || rawAmount === "0") return;
+      if (network !== "mainnet-beta") {
+        setError("Real swaps require NEXT_PUBLIC_SOLANA_CLUSTER=mainnet-beta in this deployment.");
+        return;
+      }
       if (side === "BUY" && Number(amount) < 0.01) return;
       setQuoteLoading(true);
       const inputMint = side === "BUY" ? WSOL_MINT : mint;
@@ -155,7 +159,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [amount, connected, decimals, mint, parsedMint, publicKey, rawAmount, side, quoteRefreshNonce]);
+  }, [amount, connected, decimals, mint, network, parsedMint, publicKey, rawAmount, side, quoteRefreshNonce]);
 
   useEffect(() => {
     if (!order || !connected || pending) return;
