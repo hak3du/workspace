@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { marketProxyRateLimit } from "@/lib/server/market-proxy-rate-limit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
+  const rate = marketProxyRateLimit(request, "jupiter-execute", 10);
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Too many swap executions requested. Check prior signatures before retrying." }, {
+      status: 429,
+      headers: { "Retry-After": String(rate.retryAfterSeconds), "Cache-Control": "no-store" },
+    });
+  }
   let body: { signedTransaction?: unknown; requestId?: unknown };
   try {
     body = await request.json();
