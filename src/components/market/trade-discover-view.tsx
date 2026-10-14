@@ -432,7 +432,12 @@ export function TradeDiscoverView() {
             </DialogDescription>
           </div>
           <div className="p-3 sm:p-5">
-            {!marketToken ? (
+            {!marketToken && error ? (
+              <div role="alert" className="rounded-xl border border-red-400/30 bg-red-400/5 p-4 text-sm text-red-200">
+                {error}
+                <button type="button" className="ml-2 underline underline-offset-4" onClick={() => void openMint(selectedMint)}>Retry</button>
+              </div>
+            ) : !marketToken ? (
               <div className="flex h-[320px] items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Verifying token and loading PQC Market chart…
               </div>
