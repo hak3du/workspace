@@ -63,9 +63,33 @@ export default function TradePage() {
   const [token, setToken] = useState<TokenDTO | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [discoverSearch, setDiscoverSearch] = useState("");
+  const [discoverables, setDiscoverables] = useState<DiscoverableCoin[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(true);
+  const [discoverError, setDiscoverError] = useState("");
 
-  async function openMint() {
-    const mint = mintInput.trim();
+  async function loadDiscoverables(query = "") {
+    setDiscoverLoading(true);
+    setDiscoverError("");
+    try {
+      const response = await fetch("/api/market/discover" + (query.trim() ? "?q=" + encodeURIComponent(query.trim()) : ""), { cache: "no-store" });
+      const payload = await response.json() as { coins?: DiscoverableCoin[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || "Unable to load Pump.fun discoverables.");
+      setDiscoverables(payload.coins || []);
+    } catch (loadError) {
+      setDiscoverables([]);
+      setDiscoverError(loadError instanceof Error ? loadError.message : "Unable to load Pump.fun discoverables.");
+    } finally {
+      setDiscoverLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadDiscoverables();
+  }, []);
+
+  async function openMint(mintOverride?: string) {
+    const mint = (mintOverride ?? mintInput).trim();
     if (!mint) {
       setError("Paste a real Solana token mint address.");
       return;
