@@ -304,7 +304,7 @@ export function TradePanel({
         </TabsContent>
       </Tabs>
 
-      <Button className={"mt-4 h-11 w-full " + (side === "BUY" ? "glow-violet" : "bg-red-500 text-white hover:bg-red-500/90")} onClick={handleSubmit} disabled={pending || (side === "BUY" && (!(amt > 0) || amount === "")) || (REAL_PUMP_TRADING_ENABLED && (liveBlocked || (side === "SELL" && realSellRaw <= 0n)))}>
+      <Button className={"mt-4 h-11 w-full " + (side === "BUY" ? "glow-violet" : "bg-red-500 text-white hover:bg-red-500/90")} onClick={handleSubmit} disabled={pending || (side === "BUY" && (!(amt > 0) || amount === "")) || (REAL_PUMP_TRADING_ENABLED && (liveBlocked || (side === "SELL" && realSellRaw <= BigInt(0))))}>
         {pending && <Loader2 className="size-4 animate-spin" />}
         {pending ? (REAL_PUMP_TRADING_ENABLED ? "Waiting for Solana confirmation…" : "Recording demo…") : REAL_PUMP_TRADING_ENABLED ? (side === "BUY" ? "Buy on Solana" : "Sell on Solana") : (side === "BUY" ? "Record demo buy" : "Record demo sell")}
       </Button>
