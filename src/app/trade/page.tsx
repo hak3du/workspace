@@ -86,6 +86,8 @@ export default function TradePage() {
 
   useEffect(() => {
     void loadDiscoverables();
+    // The initial listing request should run once when the trade page mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function openMint(mintOverride?: string) {
