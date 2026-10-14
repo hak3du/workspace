@@ -126,8 +126,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     const timeout = setTimeout(async () => {
       setOrder(null);
       setError("");
-      if (!ENABLED || !connected || !publicKey || !parsedMint || !rawAmount || rawAmount === "0" ||
-          (side === "SELL" && decimals === null)) return;
+      if (!ENABLED || !connected || !publicKey || !parsedMint || decimals === null || !rawAmount || rawAmount === "0") return;
       if (side === "BUY" && Number(amount) < 0.01) return;
       setQuoteLoading(true);
       const inputMint = side === "BUY" ? WSOL_MINT : mint;
@@ -182,6 +181,11 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
     setLastSignature("");
     try {
       const transaction = VersionedTransaction.deserialize(base64ToBytes(order.transaction));
+      const signerCount = transaction.message.header.numRequiredSignatures;
+      const signerKeys = transaction.message.staticAccountKeys.slice(0, signerCount);
+      if (!transaction.message.staticAccountKeys[0]?.equals(publicKey) || !signerKeys.some((key) => key.equals(publicKey))) {
+        throw new Error("The routed transaction does not identify your connected wallet as its fee payer and signer. Nothing was signed.");
+      }
       const signed = await signTransaction(transaction);
       const signedTransaction = bytesToBase64(signed.serialize());
       setNotice("Submitting signed swap to Jupiter for execution and confirmation…");
@@ -263,6 +267,7 @@ export function LiveSwapPanel({ mint, symbol, network }: { mint: string; symbol:
       )}
       <div className="mt-4 rounded-lg border border-white/10 bg-black/10 p-3">
         <div className="flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">Estimated receive</span><span className="font-semibold tabular-nums">{outputEstimate} {side === "BUY" ? symbol : "SOL"}</span></div>
+        <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground"><span>Minimum receive</span><span className="font-medium">{order ? formatRaw(order.otherAmountThreshold, outputDecimals, outputDecimals > 6 ? 9 : 6) + " " + (side === "BUY" ? symbol : "SOL") : "—"}</span></div>
         <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground"><span>Price impact</span><span>{impactText}</span></div>
         <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground"><ArrowDownUp className="size-3" /> Route and final minimum output are set by the live quote.</div>
       </div>
