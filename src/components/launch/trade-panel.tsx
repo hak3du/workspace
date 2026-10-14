@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import BN from "bn.js";
 import { Loader2, Wallet } from "lucide-react";
-import { PublicKey, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { PublicKey, Transaction, LAMPORTS_PER_SOL, type TransactionInstruction } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,12 @@ import { post } from "@/lib/api";
 import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
 import { compact, sol } from "@/lib/format";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
-import { OnlinePumpSdk, getBuyTokenAmountFromSolAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
+import { OnlinePumpSdk, PUMP_SDK, getBuyTokenAmountFromSolAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
 const REAL_PUMP_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 const TOKEN_DECIMALS_FALLBACK = 6;
-const WRAPPED_SOL_MINT = new PublicKey("So11111111111111111111111111111111111111112");
 
 interface TradeResponse {
   trade: TradeDTO;
@@ -124,7 +123,7 @@ export function TradePanel({
           mintSupply: buyState.bondingCurve.tokenTotalSupply,
           bondingCurve: buyState.bondingCurve,
           amount: solAmount,
-          quoteMint: WRAPPED_SOL_MINT,
+          quoteMint: PublicKey.default,
         });
         if (tokensOut.lte(new BN(0))) throw new Error("Pump SDK returned a zero-token quote.");
         const spot = Number(buyState.bondingCurve.virtualQuoteReserves.toString()) /
@@ -150,7 +149,7 @@ export function TradePanel({
     return () => { active = false; };
   }, [amt, connected, mint, publicKey, sdk, side, token.mint]);
 
-  async function sendAndConfirm(instructions: Awaited<ReturnType<OnlinePumpSdk["buyInstructions"]>>) {
+  async function sendAndConfirm(instructions: TransactionInstruction[]) {
     if (!publicKey) throw new Error("Connect your Solana wallet first.");
     if (instructions.length === 0) throw new Error("Pump SDK returned no transaction instructions.");
     const latest = await connection.getLatestBlockhash("confirmed");
@@ -194,13 +193,17 @@ export function TradePanel({
         amount: solAmount,
         quoteMint: WRAPPED_SOL_MINT,
       });
-      const instructions = await sdk.buyInstructions({
-        ...buyState,
+      const instructions = await PUMP_SDK.buyInstructions({
+        global,
+        bondingCurveAccountInfo: buyState.bondingCurveAccountInfo,
+        bondingCurve: buyState.bondingCurve,
+        associatedUserAccountInfo: buyState.associatedUserAccountInfo,
         mint,
         user: publicKey,
         amount: tokenAmount,
         solAmount,
         slippage: 5,
+        tokenProgram: buyState.tokenProgram,
       });
       return await sendAndConfirm(instructions);
     }
@@ -218,13 +221,17 @@ export function TradePanel({
       quoteMint: WRAPPED_SOL_MINT,
     });
     if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
-    const instructions = await sdk.sellInstructions({
-      ...sellState,
+    const instructions = await PUMP_SDK.sellInstructions({
+      global,
+      bondingCurveAccountInfo: sellState.bondingCurveAccountInfo,
+      bondingCurve: sellState.bondingCurve,
       mint,
       user: publicKey,
       amount: amountRaw,
       solAmount: expectedSol,
       slippage: 5,
+      tokenProgram: sellState.tokenProgram,
+      mayhemMode: sellState.bondingCurve.isMayhemMode,
     });
     return await sendAndConfirm(instructions);
   }
