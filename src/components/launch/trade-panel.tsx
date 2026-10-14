@@ -52,6 +52,7 @@ export function TradePanel({
   const [buyQuote, setBuyQuote] = useState<{ tokensOut: string; feesSol: number; impactPct: number } | null>(null);
   const [walletTokenRaw, setWalletTokenRaw] = useState("0");
   const [walletTokenDecimals, setWalletTokenDecimals] = useState(TOKEN_DECIMALS_FALLBACK);
+  const [balanceRefresh, setBalanceRefresh] = useState(0);
 
   const mint = useMemo(() => {
     try { return new PublicKey(token.mint); } catch { return null; }
@@ -93,7 +94,7 @@ export function TradePanel({
     }
     void refreshWalletTokenBalance();
     return () => { active = false; };
-  }, [connection, connected, publicKey, mint, token.mint]);
+  }, [connection, connected, publicKey, mint, token.mint, balanceRefresh]);
 
   useEffect(() => {
     let active = true;
@@ -210,6 +211,7 @@ export function TradePanel({
           description: "Transaction confirmed. " + signature.slice(0, 8) + "…",
         });
         setAmount("");
+        setBalanceRefresh((value) => value + 1);
         onTraded();
         return;
       }
