@@ -20,6 +20,7 @@ const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
 const REAL_PUMP_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 const TOKEN_DECIMALS_FALLBACK = 6;
+const WRAPPED_SOL_MINT = new PublicKey("So11111111111111111111111111111111111111112");
 
 interface TradeResponse {
   trade: TradeDTO;
@@ -122,6 +123,7 @@ export function TradePanel({
           mintSupply: buyState.bondingCurve.tokenTotalSupply,
           bondingCurve: buyState.bondingCurve,
           amount: solAmount,
+          quoteMint: WRAPPED_SOL_MINT,
         });
         const spot = Number(buyState.bondingCurve.virtualSolReserves.toString()) /
           Number(buyState.bondingCurve.virtualTokenReserves.toString());
@@ -130,7 +132,6 @@ export function TradePanel({
         if (active) {
           setBuyQuote({
             tokensOut: tokensOut.toString(),
-            feesSol: 0,
             impactPct: Number.isFinite(effectivePrice) && spot > 0 ? Math.max(0, ((effectivePrice / spot) - 1) * 100) : 0,
           });
         }
@@ -208,6 +209,7 @@ export function TradePanel({
       mintSupply: sellState.bondingCurve.tokenTotalSupply,
       bondingCurve: sellState.bondingCurve,
       amount: amountRaw,
+      quoteMint: WRAPPED_SOL_MINT,
     });
     if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
     const instructions = await sdk.sellInstructions({
