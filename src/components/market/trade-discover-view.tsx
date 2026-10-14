@@ -5,11 +5,10 @@ import { ArrowUpRight, ChartNoAxesCombined, CircleAlert, Loader2, Search, Shield
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { TradePanel } from "@/components/launch/trade-panel";
+import { LiveSwapPanel } from "@/components/market/live-swap-panel";
 import type { TokenDTO } from "@/lib/types";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const LIVE_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 
 type DiscoverableCoin = {
   mint: string;
@@ -396,26 +395,6 @@ export function TradeDiscoverView() {
 
 
 
-          {!LIVE_TRADING_ENABLED ? (
-            <section className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-5">
-              <h2 className="font-semibold text-amber-100">Live trading is disabled</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Market lookup and charting are separate from trading. Keep live trading disabled until the Pump.fun quote and transaction path has been verified. Do not enable the flag just to make the trade panel appear.
-              </p>
-            </section>
-          ) : marketToken.marketDataAvailable ? (
-            <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-              <div className="glass rounded-2xl p-5">
-                <div className="flex items-center gap-2"><TrendingUp className="size-5 text-violet-300" /><h2 className="text-lg font-semibold">Trading</h2></div>
-                <p className="mt-2 text-sm text-muted-foreground">Review the token's on-chain bonding-curve status and wallet transaction before approving. A market pair alone does not guarantee Pump bonding-curve support.</p>
-              </div>
-              <TradePanel token={token} myHolding={null} onTraded={() => {}} />
-            </section>
-          ) : (
-            <section className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-5 text-sm text-muted-foreground">
-              Trading controls remain unavailable because no indexed market pair was found. This avoids presenting placeholder values as a live quote.
-            </section>
-          )}
           <p className="text-xs text-muted-foreground">Market data source: Dexscreener. Last checked {new Date(marketToken.fetchedAt).toLocaleString()}.</p>
         </div>
       )}
@@ -522,6 +501,11 @@ export function TradeDiscoverView() {
               </section>
             )}
           </div>
+          {marketToken && (
+            <div className="border-t border-white/10 p-3 sm:p-5">
+              <LiveSwapPanel mint={marketToken.mint} symbol={marketToken.symbol || "TOKEN"} network={marketToken.network} />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
