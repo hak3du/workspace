@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       signedTransaction.length > 200_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(signedTransaction)) {
     return NextResponse.json({ error: "A valid signed transaction in base64 is required." }, { status: 400 });
   }
-  if (typeof requestId !== "string" || requestId.length < 8 || requestId.length > 256 || !/^[A-Za-z0-9_-]+$/.test(requestId)) {
+  if (typeof requestId !== "string" || requestId.length < 8 || requestId.length > 256 || !/^[\x20-\x7E]+$/.test(requestId)) {
     return NextResponse.json({ error: "A valid Jupiter request ID is required." }, { status: 400 });
   }
 
