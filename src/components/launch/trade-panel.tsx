@@ -191,7 +191,7 @@ export function TradePanel({
         mintSupply: buyState.bondingCurve.tokenTotalSupply,
         bondingCurve: buyState.bondingCurve,
         amount: solAmount,
-        quoteMint: WRAPPED_SOL_MINT,
+        quoteMint: PublicKey.default,
       });
       const instructions = await PUMP_SDK.buyInstructions({
         global,
@@ -218,7 +218,7 @@ export function TradePanel({
       mintSupply: sellState.bondingCurve.tokenTotalSupply,
       bondingCurve: sellState.bondingCurve,
       amount: amountRaw,
-      quoteMint: WRAPPED_SOL_MINT,
+      quoteMint: PublicKey.default,
     });
     if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
     const instructions = await PUMP_SDK.sellInstructions({
