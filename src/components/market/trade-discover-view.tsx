@@ -10,7 +10,7 @@ import { TradePanel } from "@/components/launch/trade-panel";
 import type { TokenDTO } from "@/lib/types";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const LIVE_TRADING_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
+const LIVE_TRADING_ENABLED = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" && process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "false";
 
 
 type DiscoverableCoin = {
