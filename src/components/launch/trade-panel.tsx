@@ -14,7 +14,7 @@ import { post } from "@/lib/api";
 import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
 import { compact, sol } from "@/lib/format";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
-import { OnlinePumpSdk } from "@pump-fun/pump-sdk";
+import { OnlinePumpSdk, getBuyTokenAmountFromSolAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -110,16 +110,28 @@ export function TradePanel({
       try {
         const curve = await sdk.fetchBondingCurve(mint);
         if (curve.complete) throw new Error("This token has graduated. AMM routing is not enabled in this first trading slice.");
-        const result = await sdk.quoteBuy({
-          mint,
-          user: publicKey,
-          solAmount: new BN(Math.round(amt * LAMPORTS_PER_SOL)),
+        const [buyState, global, feeConfig] = await Promise.all([
+          sdk.fetchBuyState(mint, publicKey),
+          sdk.fetchGlobal(),
+          sdk.fetchFeeConfig(),
+        ]);
+        const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
+        const tokensOut = getBuyTokenAmountFromSolAmount({
+          global,
+          feeConfig,
+          mintSupply: buyState.bondingCurve.tokenTotalSupply,
+          bondingCurve: buyState.bondingCurve,
+          amount: solAmount,
         });
+        const spot = Number(buyState.bondingCurve.virtualSolReserves.toString()) /
+          Number(buyState.bondingCurve.virtualTokenReserves.toString());
+        const effectivePrice = Number(solAmount.toString()) / LAMPORTS_PER_SOL /
+          (Number(tokensOut.toString()) / 10 ** TOKEN_DECIMALS_FALLBACK);
         if (active) {
           setBuyQuote({
-            tokensOut: result.tokensOut.toString(),
-            feesSol: Number(result.feesLamports.toString()) / LAMPORTS_PER_SOL,
-            impactPct: result.priceImpactBps / 100,
+            tokensOut: tokensOut.toString(),
+            feesSol: 0,
+            impactPct: Number.isFinite(effectivePrice) && spot > 0 ? Math.max(0, ((effectivePrice / spot) - 1) * 100) : 0,
           });
         }
       } catch (error) {
@@ -163,15 +175,23 @@ export function TradePanel({
     if (side === "BUY") {
       if (!Number.isFinite(amt) || amt < 0.01 || amt > 100) throw new Error("Buy between 0.01 and 100 SOL.");
       const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
-      const [buyState, quote] = await Promise.all([
+      const [buyState, global, feeConfig] = await Promise.all([
         sdk.fetchBuyState(mint, publicKey),
-        sdk.quoteBuy({ mint, user: publicKey, solAmount }),
+        sdk.fetchGlobal(),
+        sdk.fetchFeeConfig(),
       ]);
+      const tokenAmount = getBuyTokenAmountFromSolAmount({
+        global,
+        feeConfig,
+        mintSupply: buyState.bondingCurve.tokenTotalSupply,
+        bondingCurve: buyState.bondingCurve,
+        amount: solAmount,
+      });
       const instructions = await sdk.buyInstructions({
         ...buyState,
         mint,
         user: publicKey,
-        amount: quote.tokensOut,
+        amount: tokenAmount,
         solAmount,
         slippage: 5,
       });
@@ -181,11 +201,15 @@ export function TradePanel({
     if (realSellRaw <= BigInt(0)) throw new Error("No on-chain token balance available to sell.");
     const amountRaw = new BN(realSellRaw.toString());
     const sellState = await sdk.fetchSellState(mint, publicKey);
-    const quote = await sdk.quoteSell({ mint, user: publicKey, amount: amountRaw, tokenProgram: sellState.tokenProgram }) as unknown as {
-      solOut?: BN; solAmount?: BN; solReceived?: BN;
-    };
-    const expectedSol = quote.solOut ?? quote.solAmount ?? quote.solReceived;
-    if (!expectedSol) throw new Error("Pump SDK did not return an expected SOL amount for this sell; no transaction was sent.");
+    const [global, feeConfig] = await Promise.all([sdk.fetchGlobal(), sdk.fetchFeeConfig()]);
+    const expectedSol = getSellSolAmountFromTokenAmount({
+      global,
+      feeConfig,
+      mintSupply: sellState.bondingCurve.tokenTotalSupply,
+      bondingCurve: sellState.bondingCurve,
+      amount: amountRaw,
+    });
+    if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
     const instructions = await sdk.sellInstructions({
       ...sellState,
       mint,
