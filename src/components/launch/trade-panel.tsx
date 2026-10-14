@@ -50,7 +50,7 @@ export function TradePanel({
   const [pending, setPending] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [buyQuote, setBuyQuote] = useState<{ tokensOut: string; feesSol: number; impactPct: number } | null>(null);
+  const [buyQuote, setBuyQuote] = useState<{ tokensOut: string; impactPct: number } | null>(null);
   const [walletTokenRaw, setWalletTokenRaw] = useState("0");
   const [walletTokenDecimals, setWalletTokenDecimals] = useState(TOKEN_DECIMALS_FALLBACK);
   const [balanceRefresh, setBalanceRefresh] = useState(0);
@@ -187,6 +187,7 @@ export function TradePanel({
         mintSupply: buyState.bondingCurve.tokenTotalSupply,
         bondingCurve: buyState.bondingCurve,
         amount: solAmount,
+        quoteMint: WRAPPED_SOL_MINT,
       });
       const instructions = await sdk.buyInstructions({
         ...buyState,
@@ -311,7 +312,6 @@ export function TradePanel({
             <span>Price impact</span>
             <span>{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? "~" + buyQuote.impactPct.toFixed(2) + "%" : "—") : (demoBuyOut > 0 ? "~" + (((demoEffectiveSol / demoBuyOut / demoSpot) - 1) * 100).toFixed(2) + "%" : "—")}</span>
           </div>
-          {REAL_PUMP_TRADING_ENABLED && <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Protocol/creator fee estimate</span><span>{buyQuote ? sol(buyQuote.feesSol) : "—"}</span></div>}
         </TabsContent>
 
         <TabsContent value="SELL" className="space-y-4 pt-3">
