@@ -512,7 +512,12 @@ export function TradeDiscoverView() {
                 <p className="mt-2 max-w-lg text-sm text-muted-foreground">PQC Market has no candle data for this mint and timeframe yet.</p>
                 </div>
                 ) : (
-                <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">Waiting for the next PQC Market refresh…</div>
+                <div className="flex min-h-[280px] flex-col items-center justify-center px-5 text-center">
+                  <CircleAlert className="mb-3 size-7 text-muted-foreground" />
+                  <h3 className="font-semibold">Chart history unavailable</h3>
+                  <p className="mt-2 max-w-lg text-sm text-muted-foreground">{chartError || "Neither PQC Market nor the indexed market source returned chart data for this mint."}</p>
+                  <p className="mt-2 max-w-lg text-xs text-muted-foreground">Chart history is independent of trade eligibility. The chart request retries every 30 seconds; live trading checks the token's supported on-chain route separately.</p>
+                </div>
                 )}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>Live source: pqc.market · refreshes every 30 seconds</span>
