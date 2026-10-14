@@ -332,7 +332,7 @@ export function TradePanel({
         <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Trade {token.symbol}</h3>
         <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5 text-center">
           <Wallet className="mx-auto size-6 text-violet-300" />
-          <p className="text-sm text-muted-foreground">Connect Phantom to trade. Live trading is available only when explicitly enabled and the token is on the selected Solana network.</p>
+          <p className="text-sm text-muted-foreground">Connect Phantom to trade. Live Pump swaps are available on mainnet for supported SOL-quoted bonding curves.</p>
           <WalletMultiButton className="!h-11 !w-full !justify-center !rounded-lg" />
         </div>
       </div>
