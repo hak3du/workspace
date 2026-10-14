@@ -101,7 +101,8 @@ export function TradePanel({
 
       try {
         const mint = new PublicKey(token.mint);
-        const graduated = await sdk.isGraduated(mint);
+        const bondingCurve = await sdk.fetchBondingCurve(mint);
+        const graduated = bondingCurve.complete;
         let quote: OnChainQuote;
 
         if (side === "BUY") {
