@@ -115,8 +115,10 @@ export async function GET(request: NextRequest) {
     const pair = pairs[0];
     const isBaseToken = pair?.baseToken?.address?.toLowerCase() === mint.toLowerCase();
     const tokenInfo = isBaseToken ? pair?.baseToken : pair?.quoteToken;
-    const basePriceUsd = pair?.priceUsd ? Number(pair.priceUsd) : null;
-    const basePriceSol = pair?.priceNative ? Number(pair.priceNative) : null;
+    const parsedBasePriceUsd = pair?.priceUsd ? Number(pair.priceUsd) : null;
+    const parsedBasePriceSol = pair?.priceNative ? Number(pair.priceNative) : null;
+    const basePriceUsd = parsedBasePriceUsd !== null && Number.isFinite(parsedBasePriceUsd) ? parsedBasePriceUsd : null;
+    const basePriceSol = parsedBasePriceSol !== null && Number.isFinite(parsedBasePriceSol) ? parsedBasePriceSol : null;
     const isWrappedSolQuote = pair?.quoteToken?.address === "So11111111111111111111111111111111111111112";
     // DexScreener priceNative is not a universal base/quote ratio for every
     // pair. Derive the quote token's USD price only when the quote is wrapped
