@@ -532,7 +532,7 @@ export function TradeDiscoverView() {
                 </div>
                 )}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>Source: {chartSource === "pqc.market" ? "PQC Market" : chartSource === "geckoterminal" ? "GeckoTerminal" : chartSource === "none" ? "No chart source available" : chartSource || "Loading"} · refreshes every 30 seconds</span>
+                <span>Source: {chartCandles.length ? (chartSource === "pqc.market" ? "PQC Market" : chartSource === "geckoterminal" ? "GeckoTerminal" : chartSource || "Unknown provider") : marketToken.chartUrl ? "DexScreener embedded chart" : chartSource === "none" ? "No chart source available" : chartSource || "Loading"} · refreshes every 30 seconds</span>
                 <span>{chartUpdatedAt ? "Updated " + new Date(chartUpdatedAt).toLocaleTimeString() : "Waiting for first data point"}</span>
                 {chartWarning && <p className="basis-full text-amber-200/90">{chartWarning}</p>}
                 </div>
