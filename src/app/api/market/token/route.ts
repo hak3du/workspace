@@ -117,21 +117,15 @@ export async function GET(request: NextRequest) {
     const tokenInfo = isBaseToken ? pair?.baseToken : pair?.quoteToken;
     const basePriceUsd = pair?.priceUsd ? Number(pair.priceUsd) : null;
     const basePriceSol = pair?.priceNative ? Number(pair.priceNative) : null;
-    const basePerQuote = pair?.priceNative ? Number(pair.priceNative) : null;
-    // DexScreener's price fields describe the base token. For a requested quote
-    // token, derive its price from the pair ratio rather than mislabel base price.
-    const derivedQuotePriceUsd = basePriceUsd !== null && basePerQuote !== null && basePerQuote > 0
-      ? basePriceUsd / basePerQuote
-      : null;
     const isWrappedSolQuote = pair?.quoteToken?.address === "So11111111111111111111111111111111111111112";
+    // DexScreener priceNative is not a universal base/quote ratio for every
+    // pair. Derive the quote token's USD price only when the quote is wrapped
+    // SOL and priceNative is the base token's SOL-denominated price.
+    const derivedQuotePriceUsd = isWrappedSolQuote && basePriceUsd !== null && basePriceSol !== null && basePriceSol > 0
+      ? basePriceUsd / basePriceSol
+      : null;
     const priceUsd = isBaseToken ? basePriceUsd : derivedQuotePriceUsd;
-    const priceSol = isBaseToken
-      ? basePriceSol
-      : isWrappedSolQuote
-        ? 1
-        : basePriceSol !== null && basePerQuote !== null && basePerQuote > 0
-          ? basePriceSol / basePerQuote
-          : null;
+    const priceSol = isBaseToken ? basePriceSol : isWrappedSolQuote ? 1 : null;
 
     return NextResponse.json({
       mint,
