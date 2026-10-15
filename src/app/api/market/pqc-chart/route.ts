@@ -117,6 +117,65 @@ async function geckoFallback(mint: string, range: string): Promise<{ candles: Ca
   return { candles, pairAddress: pair.pairAddress, tokenSide };
 }
 
+type BirdeyeCandle = { unix_time: number; o: number; h: number; l: number; c: number; v_usd: number };
+const birdeyeCache = new Map<string, { expiresAt: number; candles: Candle[] }>();
+
+/**
+ * Final candle fallback, matching PQC Market's own implementation:
+ * Birdeye /defi/v3/ohlcv queried by mint address (not pool address).
+ * This covers tokens whose pools are not indexed by GeckoTerminal.
+ */
+async function birdeyeFallback(mint: string, range: string): Promise<Candle[]> {
+  const cached = birdeyeCache.get(mint + ":" + range);
+  if (cached && cached.expiresAt > Date.now()) return cached.candles;
+
+  const apiKey = process.env.BIRDEYE_API_KEY;
+  if (!apiKey) throw new Error("Birdeye fallback is not configured (BIRDEYE_API_KEY missing).");
+
+  const config: Record<string, { type: "1m" | "15m" | "1H" | "4H"; seconds: number }> = {
+    "1H": { type: "1m", seconds: 3_600 },
+    "1D": { type: "15m", seconds: 86_400 },
+    "1W": { type: "1H", seconds: 7 * 86_400 },
+    "1M": { type: "4H", seconds: 30 * 86_400 },
+  };
+  const { type, seconds } = config[range];
+  const to = Math.floor(Date.now() / 1000);
+  const url = new URL("https://public-api.birdeye.so/defi/v3/ohlcv");
+  url.searchParams.set("address", mint);
+  url.searchParams.set("type", type);
+  url.searchParams.set("time_from", String(to - seconds));
+  url.searchParams.set("time_to", String(to));
+
+  const response = await fetch(url.toString(), {
+    headers: { "X-API-KEY": apiKey, "x-chain": "solana", accept: "application/json" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) throw new Error("Birdeye OHLCV request failed (" + response.status + ").");
+  const payload = await response.json() as {
+    success?: boolean;
+    data?: { items?: BirdeyeCandle[] };
+  };
+  if (!payload.success || !Array.isArray(payload.data?.items)) {
+    throw new Error("Birdeye returned no usable OHLCV payload.");
+  }
+
+  const candles = payload.data.items.map((item): Candle | null => {
+    const candle = normalizeCandle([item.unix_time, item.o, item.h, item.l, item.c, item.v_usd]);
+    return candle && [candle.t, candle.o, candle.h, candle.l, candle.c, candle.v].every(Number.isFinite)
+      ? candle
+      : null;
+  }).filter((item): item is Candle => item !== null).sort((a, b) => a.t - b.t);
+
+  if (!candles.length) throw new Error("Birdeye has no candle history for this mint and timeframe.");
+  birdeyeCache.set(mint + ":" + range, { expiresAt: Date.now() + 60_000, candles });
+  if (birdeyeCache.size > 500) {
+    const oldest = birdeyeCache.keys().next().value;
+    if (oldest) birdeyeCache.delete(oldest);
+  }
+  return candles;
+}
+
 export async function GET(request: NextRequest) {
   const mint = (request.nextUrl.searchParams.get("mint") || "").trim();
   const range = (request.nextUrl.searchParams.get("range") || "1D").toUpperCase();
@@ -151,6 +210,7 @@ export async function GET(request: NextRequest) {
     pqcError = error instanceof Error ? error.message : "PQC Market request failed.";
   }
 
+  let geckoError: string | null = null;
   try {
     const fallback = await geckoFallback(mint, range);
     const candles = fallback.candles;
@@ -162,16 +222,24 @@ export async function GET(request: NextRequest) {
         warning: "PQC Market candles were unavailable; showing GeckoTerminal OHLCV for the deepest indexed Solana pair. The selected pool token side is " + fallback.tokenSide + ".",
       }, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
-    return NextResponse.json({
-      error: "Neither PQC Market nor GeckoTerminal returned candles for this mint and timeframe.",
-      upstreamError: pqcError, candles: [], candlesOk: false, source: "none", candleCount: 0,
-    }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } });
+    geckoError = "GeckoTerminal returned no candles for this mint and timeframe.";
   } catch (error) {
+    geckoError = error instanceof Error ? error.message : "GeckoTerminal fallback failed.";
+  }
+
+  try {
+    const candles = await birdeyeFallback(mint, range);
     return NextResponse.json({
-      error: "PQC Market and the GeckoTerminal fallback could not provide chart history.",
-      upstreamError: pqcError,
-      fallbackError: error instanceof Error ? error.message : "Chart fallback failed.",
-      candles: [], candlesOk: false, source: "none",
-    }, { status: 502, headers: { "Cache-Control": "no-store, max-age=0" } });
+      candles, candlesOk: true, source: "birdeye",
+      fetchedAt: new Date().toISOString(), candleCount: candles.length,
+      warning: "PQC Market and GeckoTerminal candles were unavailable; showing Birdeye OHLCV fetched by token mint.",
+    }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+  } catch (error) {
+    const birdeyeError = error instanceof Error ? error.message : "Birdeye fallback failed.";
+    return NextResponse.json({
+      error: "PQC Market, GeckoTerminal, and Birdeye could not provide chart history for this mint and timeframe.",
+      upstreamError: pqcError, geckoError, birdeyeError,
+      candles: [], candlesOk: false, source: "none", candleCount: 0,
+    }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } });
   }
 }
