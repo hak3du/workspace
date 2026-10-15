@@ -264,7 +264,7 @@ export function TradeDiscoverView() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">PQC Market explorer</p>
             <h2 className="mt-1 text-xl font-semibold">Discoverables</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Browse live listings from the PQC Market server. Search by name or ticker, then select a coin to load its live chart and market verification.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Browse PQC Market listings, search by name or ticker, then load a mint to verify it on-chain and retrieve indexed market data.</p>
           </div>
           <form className="flex w-full gap-2 sm:max-w-md" onSubmit={(event) => { event.preventDefault(); void loadDiscoverables(discoverSearch); }}>
             <Input value={discoverSearch} onChange={(event) => setDiscoverSearch(event.target.value)} placeholder="Search PQC Market coins…" aria-label="Search PQC Market coins" />
@@ -350,7 +350,7 @@ export function TradeDiscoverView() {
           </div>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>Source: PQC Market live listings and market snapshot. Charts are fetched separately from the PQC Market server.</span>
+          <span>Source: PQC Market listings; token metrics and charts use indexed market providers when available.</span>
           <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={() => { setDiscoverSearch(""); void loadDiscoverables(""); }}>Latest discoverables</button>
         </div>
       </section>
@@ -414,7 +414,8 @@ export function TradeDiscoverView() {
 
 
 
-          <p className="text-xs text-muted-foreground">Market data source: Dexscreener. Last checked {new Date(marketToken.fetchedAt).toLocaleString()}.</p>
+          {marketToken.message && <p role="status" className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-100">{marketToken.message}</p>}
+          <p className="text-xs text-muted-foreground">Market snapshot source: DexScreener. Last checked {new Date(marketToken.fetchedAt).toLocaleString()}.</p>
         </div>
       )}
 
@@ -466,7 +467,7 @@ export function TradeDiscoverView() {
                 )}
                 {chartLoading && !chartCandles.length ? (
                 <div className="flex h-[360px] items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> Fetching live candles from PQC Market…
+                <Loader2 className="size-4 animate-spin" /> Fetching candles from available market sources…
                 </div>
                 ) : chartCandles.length ? (
                 <div className="h-[360px] w-full">
@@ -520,7 +521,7 @@ export function TradeDiscoverView() {
                 <div className="flex h-[360px] flex-col items-center justify-center text-center">
                 <CircleAlert className="mb-3 size-7 text-muted-foreground" />
                 <h3 className="font-semibold">No candles returned</h3>
-                <p className="mt-2 max-w-lg text-sm text-muted-foreground">PQC Market has no candle data for this mint and timeframe yet.</p>
+                <p className="mt-2 max-w-lg text-sm text-muted-foreground">No indexed candle history was returned for this mint and timeframe. The mint can still be valid even when chart history is unavailable.</p>
                 </div>
                 ) : (
                 <div className="flex min-h-[280px] flex-col items-center justify-center px-5 text-center">
