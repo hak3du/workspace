@@ -73,24 +73,35 @@ function extractCandles(payload: Record<string, unknown>): Candle[] {
  * GeckoTerminal OHLCV. This also supports valid Solana tokens that have a
  * market pair but are not present in PQC's own launch database.
  */
-async function geckoFallback(mint: string, range: string): Promise<Candle[]> {
+async function geckoFallback(mint: string, range: string): Promise<{ candles: Candle[]; pairAddress: string; tokenSide: "base" | "quote" }> {
   const dexResponse = await fetch("https://api.dexscreener.com/latest/dex/tokens/" + encodeURIComponent(mint), {
     cache: "no-store",
     signal: AbortSignal.timeout(8_000),
   });
   if (!dexResponse.ok) throw new Error("DexScreener pair lookup failed.");
   const dexPayload = await dexResponse.json() as {
-    pairs?: Array<{ chainId?: string; pairAddress?: string; baseToken?: { address?: string }; liquidity?: { usd?: number } }>;
+    pairs?: Array<{
+      chainId?: string;
+      pairAddress?: string;
+      baseToken?: { address?: string };
+      quoteToken?: { address?: string };
+      liquidity?: { usd?: number };
+    }>;
   };
+  // A requested token can be either side of a pool. GeckoTerminal can return
+  // OHLCV denominated in USD for either side; never chart the other token by mistake.
   const pair = (dexPayload.pairs || [])
-    .filter((item) => item.chainId === "solana" && item.pairAddress && item.baseToken?.address?.toLowerCase() === mint.toLowerCase())
+    .filter((item) => item.chainId === "solana" && item.pairAddress &&
+      (item.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
+       item.quoteToken?.address?.toLowerCase() === mint.toLowerCase()))
     .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
-  if (!pair?.pairAddress) return [];
+  if (!pair?.pairAddress) return { candles: [], pairAddress: "", tokenSide: "base" };
 
+  const tokenSide = pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ? "base" : "quote";
   const tf = GECKO_RANGES[range];
   const url = "https://api.geckoterminal.com/api/v2/networks/solana/pools/" +
     encodeURIComponent(pair.pairAddress) + "/ohlcv/" + tf.unit +
-    "?aggregate=" + tf.aggregate + "&limit=" + tf.limit + "&currency=usd&token=base";
+    "?aggregate=" + tf.aggregate + "&limit=" + tf.limit + "&currency=usd&token=" + tokenSide;
   const response = await fetch(url, {
     headers: { accept: "application/json" },
     cache: "no-store",
@@ -99,10 +110,11 @@ async function geckoFallback(mint: string, range: string): Promise<Candle[]> {
   if (!response.ok) throw new Error("GeckoTerminal OHLCV request failed (" + response.status + ").");
   const payload = await response.json() as { data?: { attributes?: { ohlcv_list?: number[][] } } };
   // GeckoTerminal returns newest first; the chart consumes oldest first.
-  return (payload.data?.attributes?.ohlcv_list || [])
+  const candles = (payload.data?.attributes?.ohlcv_list || [])
     .map(([t, o, h, l, c, v]) => ({ t, o, h, l, c, v }))
     .filter((item) => [item.t, item.o, item.h, item.l, item.c, item.v].every(Number.isFinite))
     .reverse();
+  return { candles, pairAddress: pair.pairAddress, tokenSide };
 }
 
 export async function GET(request: NextRequest) {
@@ -140,12 +152,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const candles = await geckoFallback(mint, range);
+    const fallback = await geckoFallback(mint, range);
+    const candles = fallback.candles;
     if (candles.length) {
       return NextResponse.json({
         candles, candlesOk: true, source: "geckoterminal",
+        pairAddress: fallback.pairAddress, tokenSide: fallback.tokenSide,
         fetchedAt: new Date().toISOString(), candleCount: candles.length,
-        warning: "PQC Market candles were unavailable; showing GeckoTerminal OHLCV for the deepest indexed DexScreener pair.",
+        warning: "PQC Market candles were unavailable; showing GeckoTerminal OHLCV for the deepest indexed Solana pair. The selected pool token side is " + fallback.tokenSide + ".",
       }, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
     return NextResponse.json({
