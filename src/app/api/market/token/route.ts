@@ -103,7 +103,8 @@ export async function GET(request: NextRequest) {
           .filter((pair) =>
             pair.chainId === "solana" &&
             Boolean(pair.pairAddress) &&
-            pair.baseToken?.address?.toLowerCase() === mint.toLowerCase()
+            (pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
+             pair.quoteToken?.address?.toLowerCase() === mint.toLowerCase())
           )
           .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
       }
@@ -111,11 +112,26 @@ export async function GET(request: NextRequest) {
       // A valid on-chain mint can exist without a current Dexscreener listing.
     }
 
-    // Dexscreener's priceUsd/priceNative fields describe the pair's base token.
-    // Only use pairs where the requested mint is the base token to avoid showing
-    // the quote asset's price as though it belonged to the requested mint.
     const pair = pairs[0];
-    const tokenInfo = pair?.baseToken;
+    const isBaseToken = pair?.baseToken?.address?.toLowerCase() === mint.toLowerCase();
+    const tokenInfo = isBaseToken ? pair?.baseToken : pair?.quoteToken;
+    const basePriceUsd = pair?.priceUsd ? Number(pair.priceUsd) : null;
+    const basePriceSol = pair?.priceNative ? Number(pair.priceNative) : null;
+    const basePerQuote = pair?.priceNative ? Number(pair.priceNative) : null;
+    // DexScreener's price fields describe the base token. For a requested quote
+    // token, derive its price from the pair ratio rather than mislabel base price.
+    const derivedQuotePriceUsd = basePriceUsd !== null && basePerQuote !== null && basePerQuote > 0
+      ? basePriceUsd / basePerQuote
+      : null;
+    const isWrappedSolQuote = pair?.quoteToken?.address === "So11111111111111111111111111111111111111112";
+    const priceUsd = isBaseToken ? basePriceUsd : derivedQuotePriceUsd;
+    const priceSol = isBaseToken
+      ? basePriceSol
+      : isWrappedSolQuote
+        ? 1
+        : basePriceSol !== null && basePerQuote !== null && basePerQuote > 0
+          ? basePriceSol / basePerQuote
+          : null;
 
     return NextResponse.json({
       mint,
@@ -128,21 +144,27 @@ export async function GET(request: NextRequest) {
       pumpQuoteMint,
       name: tokenInfo?.name || null,
       symbol: tokenInfo?.symbol || null,
-      priceUsd: pair?.priceUsd ? Number(pair.priceUsd) : null,
-      priceSol: pair?.priceNative ? Number(pair.priceNative) : null,
-      marketCapUsd: pair?.marketCap ?? pair?.fdv ?? null,
+      priceUsd: priceUsd !== null && Number.isFinite(priceUsd) ? priceUsd : null,
+      priceSol: priceSol !== null && Number.isFinite(priceSol) ? priceSol : null,
+      // Pair market cap/FDV belongs to the base token and cannot be reassigned
+      // to the quote token without an independent supply calculation.
+      marketCapUsd: isBaseToken ? (pair?.marketCap ?? pair?.fdv ?? null) : null,
       liquidityUsd: pair?.liquidity?.usd ?? null,
       volume24hUsd: pair?.volume?.h24 ?? null,
-      change24hPct: pair?.priceChange?.h24 ?? null,
+      change24hPct: isBaseToken ? (pair?.priceChange?.h24 ?? null) : null,
       pairAddress: pair?.pairAddress || null,
       pairUrl: pair?.url || null,
-      chartUrl: pair?.pairAddress
+      // DexScreener embeds the base-token chart; do not present it as the quote
+      // token's chart. The candle endpoint supports both pool token sides.
+      chartUrl: pair?.pairAddress && isBaseToken
         ? "https://dexscreener.com/solana/" + encodeURIComponent(pair.pairAddress) + "?embed=1&theme=dark&trades=0&info=0"
         : null,
-      marketDataAvailable: Boolean(pair),
-      message: pair
-        ? null
-        : "Mint verified on-chain, but no indexed Solana market pair was found. Price, liquidity and chart are unavailable from Dexscreener for this mint.",
+      marketDataAvailable: Boolean(pair && priceUsd !== null),
+      message: !pair
+        ? "Mint verified on-chain, but no indexed Solana market pair was found. Price, liquidity and chart are unavailable from indexed market providers."
+        : priceUsd === null
+          ? "A market pair was found, but a reliable price could not be derived for this token."
+          : null,
       fetchedAt: new Date().toISOString(),
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
