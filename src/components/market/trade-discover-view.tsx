@@ -31,8 +31,11 @@ type PQCChartPayload = {
   candles?: PQCCandle[];
   candlesOk?: boolean;
   error?: string;
+  warning?: string | null;
   fetchedAt?: string;
   source?: string;
+  pairAddress?: string;
+  tokenSide?: "base" | "quote";
 };
 
 type MarketToken = {
@@ -100,6 +103,8 @@ export function TradeDiscoverView() {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState("");
   const [chartUpdatedAt, setChartUpdatedAt] = useState<string | null>(null);
+  const [chartSource, setChartSource] = useState<string | null>(null);
+  const [chartWarning, setChartWarning] = useState("");
   const [chartOpen, setChartOpen] = useState(false);
 
   async function loadDiscoverables(query = "") {
@@ -136,6 +141,8 @@ export function TradeDiscoverView() {
       setChartCandles([]);
       setChartError("");
       setChartUpdatedAt(null);
+      setChartSource(null);
+      setChartWarning("");
       return;
     }
 
@@ -160,8 +167,10 @@ export function TradeDiscoverView() {
           : [];
         setChartCandles(nextCandles);
         setChartUpdatedAt(payload.fetchedAt || new Date().toISOString());
+        setChartSource(payload.source || (nextCandles.length ? "unknown" : "none"));
+        setChartWarning(payload.warning || "");
         setChartError(!payload.candlesOk && !nextCandles.length
-          ? "PQC Market is temporarily unable to fetch candles for this mint. The chart will retry automatically."
+          ? (payload.error || "No indexed chart history is available for this mint and timeframe.")
           : "");
       } catch (chartLoadError) {
         if (!cancelled) setChartError(chartLoadError instanceof Error ? chartLoadError.message : "Unable to load the PQC Market chart.");
@@ -173,6 +182,8 @@ export function TradeDiscoverView() {
 
     setChartCandles([]);
     setChartError("");
+    setChartSource(null);
+    setChartWarning("");
     void loadChart();
     const interval = setInterval(() => void loadChart(), 30_000);
     return () => {
@@ -415,7 +426,7 @@ export function TradeDiscoverView() {
               {marketToken?.name || discoverables.find((coin) => coin.mint === selectedMint)?.name || "Token"} live chart
             </DialogTitle>
             <DialogDescription className="mt-1 break-all text-xs text-muted-foreground">
-              Live price candles fetched from PQC Market. This chart opens in the coin view, not below the Discoverables list.
+              Price candles from PQC Market, with indexed-market fallback when needed. This chart opens in the coin view, not below the Discoverables list.
             </DialogDescription>
           </div>
           <div className="p-3 sm:p-5">
@@ -431,7 +442,7 @@ export function TradeDiscoverView() {
             ) : (
               <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-                <div className="flex items-center gap-2"><ChartNoAxesCombined className="size-5 text-violet-300" /><h2 className="font-semibold">Live PQC Market price chart</h2></div>
+                <div className="flex items-center gap-2"><ChartNoAxesCombined className="size-5 text-violet-300" /><h2 className="font-semibold">Live token price chart</h2></div>
                 <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1" aria-label="Chart timeframe">
                 {(["1H", "1D", "1W", "1M"] as const).map((range) => (
                 <button
@@ -520,8 +531,9 @@ export function TradeDiscoverView() {
                 </div>
                 )}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>Live source: pqc.market · refreshes every 30 seconds</span>
+                <span>Source: {chartSource === "pqc.market" ? "PQC Market" : chartSource === "geckoterminal" ? "GeckoTerminal" : chartSource === "none" ? "No chart source available" : chartSource || "Loading"} · refreshes every 30 seconds</span>
                 <span>{chartUpdatedAt ? "Updated " + new Date(chartUpdatedAt).toLocaleTimeString() : "Waiting for first data point"}</span>
+                {chartWarning && <p className="basis-full text-amber-200/90">{chartWarning}</p>}
                 </div>
                 {marketToken.pairUrl && <a className="mt-2 inline-flex items-center gap-1 text-xs text-violet-300 hover:text-violet-200" href={marketToken.pairUrl} target="_blank" rel="noreferrer">Open market pair <ArrowUpRight className="size-3.5" /></a>}
                 </div>
