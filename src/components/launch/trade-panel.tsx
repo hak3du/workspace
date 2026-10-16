@@ -15,6 +15,7 @@ import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
 import { compact, sol } from "@/lib/format";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
 import { OnlinePumpSdk, PUMP_SDK, getBuyTokenAmountFromSolAmount, getBuyV3TokenAmountFromQuoteAmount, getBuySolAmountFromTokenAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
+import { OnlinePumpAmmSdk, PUMP_AMM_SDK, canonicalPumpPoolPda } from "@pump-fun/pump-swap-sdk";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -43,6 +44,7 @@ export function TradePanel({
   const { connection } = useConnection();
   const { connected, publicKey, sendTransaction } = useWallet();
   const sdk = useMemo(() => new OnlinePumpSdk(connection), [connection]);
+  const ammSdk = useMemo(() => new OnlinePumpAmmSdk(connection), [connection]);
 
   async function resolveBaseTokenProgram(tokenMint: PublicKey): Promise<PublicKey> {
     const mintAccount = await connection.getAccountInfo(tokenMint, "confirmed");
@@ -66,6 +68,7 @@ export function TradePanel({
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [buyQuote, setBuyQuote] = useState<{ tokensOut: string; impactPct: number } | null>(null);
+  const [graduated, setGraduated] = useState(false);
   const [walletTokenRaw, setWalletTokenRaw] = useState("0");
   const [walletTokenDecimals, setWalletTokenDecimals] = useState(TOKEN_DECIMALS_FALLBACK);
   const [balanceRefresh, setBalanceRefresh] = useState(0);
