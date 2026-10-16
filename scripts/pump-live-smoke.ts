@@ -2,7 +2,8 @@ import BN from "bn.js";
 import {
   Connection,
   PublicKey,
-  Transaction,
+  TransactionMessage,
+  VersionedTransaction,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import {
@@ -117,10 +118,12 @@ async function main() {
   }
 
   const latest = await connection.getLatestBlockhash("confirmed");
-  const transaction = new Transaction({
-    feePayer: user,
+  const message = new TransactionMessage({
+    payerKey: user,
     recentBlockhash: latest.blockhash,
-  }).add(...instructions);
+    instructions,
+  }).compileToV0Message();
+  const transaction = new VersionedTransaction(message);
   const simulation = await connection.simulateTransaction(transaction, {
     sigVerify: false,
     replaceRecentBlockhash: true,
