@@ -74,7 +74,7 @@ CREATE TABLE "CreatorFeeSettlement" (
   "tokenMint" TEXT NOT NULL,
   "creatorWallet" TEXT NOT NULL,
   "platformWallet" TEXT NOT NULL,
-  "grossLamports" BIGINT NOT NULL,
+  "totalObservedLamports" BIGINT NOT NULL,
   "creatorLamports" BIGINT NOT NULL,
   "platformLamports" BIGINT NOT NULL,
   "status" TEXT NOT NULL DEFAULT 'OBSERVED',
