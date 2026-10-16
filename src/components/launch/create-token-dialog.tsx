@@ -41,7 +41,6 @@ export function CreateTokenDialog({
 
   const nameOk = name.trim().length >= 2 && name.trim().length <= 32;
   const symbolOk = /^[A-Z0-9]{2,10}$/.test(symbol);
-  const descOk = description.length <= MAX_DESCRIPTION;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
