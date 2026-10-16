@@ -222,8 +222,20 @@ export function TradePanel({
     if (!connected || !publicKey || !mint) throw new Error("Connect a Solana wallet and use a valid token mint.");
     const curve = await sdk.fetchBondingCurve(mint);
     if (curve.complete) {
-      throw new Error("This token has graduated. Graduated PumpAMM routing is the next integration; this first live path supports bonding-curve tokens only.");
+      const poolKey = canonicalPumpPoolPda(mint);
+      const swapState = await ammSdk.swapSolanaState(poolKey, publicKey);
+      if (side === "BUY") {
+        if (!Number.isFinite(amt) || amt < 0.01 || amt > 100) throw new Error("Buy between 0.01 and 100 SOL.");
+        const quoteAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
+        const instructions = await PUMP_AMM_SDK.buyQuoteInput(swapState, quoteAmount, PUMP_SLIPPAGE_PERCENT, { v2: true });
+        return await sendAndConfirm(instructions);
+      }
+      if (realSellRaw <= BigInt(0)) throw new Error("No on-chain token balance available to sell.");
+      const amountRaw = new BN(realSellRaw.toString());
+      const instructions = await PUMP_AMM_SDK.sellBaseInput(swapState, amountRaw, PUMP_SLIPPAGE_PERCENT, { v2: true });
+      return await sendAndConfirm(instructions);
     }
+    setGraduated(false);
     if (!curve.quoteMint.equals(PublicKey.default)) {
       throw new Error("This first live trading slice supports SOL-quoted Pump bonding curves only.");
     }
