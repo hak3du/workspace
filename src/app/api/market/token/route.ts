@@ -121,7 +121,8 @@ export async function GET(request: NextRequest) {
           .filter((pair) =>
             pair.chainId === "solana" &&
             Boolean(pair.pairAddress) &&
-            pair.baseToken?.address?.toLowerCase() === mint.toLowerCase()
+            (pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
+           pair.quoteToken?.address?.toLowerCase() === mint.toLowerCase())
           )
           .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
       }
