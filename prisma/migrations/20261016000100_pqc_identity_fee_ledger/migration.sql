@@ -23,6 +23,7 @@ CREATE TABLE "WalletChallenge" (
   "userId" TEXT NOT NULL,
   "address" TEXT NOT NULL,
   "nonce" TEXT NOT NULL,
+  "message" TEXT NOT NULL,
   "expiresAt" DATETIME NOT NULL,
   "usedAt" DATETIME,
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
