@@ -8,6 +8,24 @@ export const revalidate = 0;
 const SPL_TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 
+function finitePositiveNumber(value: unknown): number | null {
+  const number = typeof value === "number" ? value :
+    typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function finiteNonNegativeNumber(value: unknown): number | null {
+  const number = typeof value === "number" ? value :
+    typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+function finiteNumber(value: unknown): number | null {
+  const number = typeof value === "number" ? value :
+    typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
+  return Number.isFinite(number) ? number : null;
+}
+
 type DexPair = {
   chainId?: string;
   dexId?: string;
@@ -103,19 +121,33 @@ export async function GET(request: NextRequest) {
           .filter((pair) =>
             pair.chainId === "solana" &&
             Boolean(pair.pairAddress) &&
-            pair.baseToken?.address?.toLowerCase() === mint.toLowerCase()
+            (pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
+           pair.quoteToken?.address?.toLowerCase() === mint.toLowerCase())
           )
-          .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+          .sort((a, b) => {
+            const aIsBase = a.baseToken?.address?.toLowerCase() === mint.toLowerCase();
+            const bIsBase = b.baseToken?.address?.toLowerCase() === mint.toLowerCase();
+            if (aIsBase !== bIsBase) return aIsBase ? -1 : 1;
+            return (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0);
+          });
       }
     } catch {
       // A valid on-chain mint can exist without a current Dexscreener listing.
     }
 
-    // Dexscreener's priceUsd/priceNative fields describe the pair's base token.
-    // Only use pairs where the requested mint is the base token to avoid showing
-    // the quote asset's price as though it belonged to the requested mint.
     const pair = pairs[0];
-    const tokenInfo = pair?.baseToken;
+    const isBaseToken = pair?.baseToken?.address?.toLowerCase() === mint.toLowerCase();
+    const tokenInfo = isBaseToken ? pair?.baseToken : pair?.quoteToken;
+    const basePriceUsd = finitePositiveNumber(pair?.priceUsd);
+    const basePriceSol = finitePositiveNumber(pair?.priceNative);
+    const isWrappedSolQuote = pair?.quoteToken?.address === "So11111111111111111111111111111111111111112";
+    // DexScreener price fields describe the base token. Only derive a quote-side
+    // price when the quote asset is wrapped SOL and both base prices are valid.
+    const derivedQuotePriceUsd = isWrappedSolQuote && basePriceUsd !== null && basePriceSol !== null
+      ? basePriceUsd / basePriceSol
+      : null;
+    const priceUsd = isBaseToken ? basePriceUsd : derivedQuotePriceUsd;
+    const priceSol = isBaseToken ? basePriceSol : isWrappedSolQuote ? 1 : null;
 
     return NextResponse.json({
       mint,
@@ -128,21 +160,25 @@ export async function GET(request: NextRequest) {
       pumpQuoteMint,
       name: tokenInfo?.name || null,
       symbol: tokenInfo?.symbol || null,
-      priceUsd: pair?.priceUsd ? Number(pair.priceUsd) : null,
-      priceSol: pair?.priceNative ? Number(pair.priceNative) : null,
-      marketCapUsd: pair?.marketCap ?? pair?.fdv ?? null,
-      liquidityUsd: pair?.liquidity?.usd ?? null,
-      volume24hUsd: pair?.volume?.h24 ?? null,
-      change24hPct: pair?.priceChange?.h24 ?? null,
+      priceUsd: finitePositiveNumber(priceUsd),
+      priceSol: finitePositiveNumber(priceSol),
+      marketCapUsd: isBaseToken
+        ? finitePositiveNumber(pair?.marketCap) ?? finitePositiveNumber(pair?.fdv)
+        : null,
+      liquidityUsd: finiteNonNegativeNumber(pair?.liquidity?.usd),
+      volume24hUsd: finiteNonNegativeNumber(pair?.volume?.h24),
+      change24hPct: isBaseToken ? finiteNumber(pair?.priceChange?.h24) : null,
       pairAddress: pair?.pairAddress || null,
       pairUrl: pair?.url || null,
-      chartUrl: pair?.pairAddress
+      chartUrl: pair?.pairAddress && isBaseToken
         ? "https://dexscreener.com/solana/" + encodeURIComponent(pair.pairAddress) + "?embed=1&theme=dark&trades=0&info=0"
         : null,
-      marketDataAvailable: Boolean(pair),
-      message: pair
-        ? null
-        : "Mint verified on-chain, but no indexed Solana market pair was found. Price, liquidity and chart are unavailable from Dexscreener for this mint.",
+      marketDataAvailable: finitePositiveNumber(priceUsd) !== null,
+      message: !pair
+        ? "Mint verified on-chain, but no indexed Solana market pair was found. Price, liquidity and chart are unavailable from indexed providers."
+        : finitePositiveNumber(priceUsd) === null
+          ? "A market pair was found, but a reliable price could not be derived for this token."
+          : null,
       fetchedAt: new Date().toISOString(),
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
