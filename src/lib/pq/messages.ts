@@ -70,7 +70,7 @@ export function aheIdentityRegistrationMessage(p: {
     `Public seed: ${p.pubSeed}`,
     `Tree height: ${p.height}`,
     "Scheme: WOTS(w=16,SHA-256)+Merkle",
-  ].join("\\n");
+  ].join("\n");
 }
 
 /** Domain-separated digest over sorted key/value fields. */
