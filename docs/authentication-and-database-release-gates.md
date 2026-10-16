@@ -46,3 +46,10 @@ Apply `prisma/migrations/20261016000100_pqc_identity_fee_ledger/migration.sql` o
 - The migration resets previously simulated wallet records to `verified=false`; old simulated rows must not be trusted as ownership proof.
 - The `provider` value is only a display label. The cryptographic signature—not the client-provided provider name—establishes wallet ownership.
 - This flow still depends on the WalletChallenge and Wallet schema migration being applied successfully to the actual database.
+
+
+## Creator payout evidence (not automatic settlement)
+
+`POST /api/market/fees/reconcile` is admin-only. It requires a finalized transaction, an anchored attestation for the mint, the registered creator wallet, a configured public AHE platform wallet, and explicitly configured Pump/PumpSwap program IDs. It records exact lamport balance deltas in `CreatorFeeSettlement` using the transaction signature as an idempotency key.
+
+This is deliberately an **evidence/reconciliation ledger**, not a claim that those balance deltas are necessarily all creator-fee proceeds. It does not initiate transfers, choose a revenue split, or prove attribution from balance deltas alone. A production settlement engine still needs the officially supported Pump creator-fee sharing mechanism, confirmed fee-event parsing, disclosed share policy, destination verification, and reconciliation tests. Do not configure this endpoint from guessed program IDs or unapproved wallet destinations.
