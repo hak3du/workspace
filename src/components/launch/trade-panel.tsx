@@ -19,7 +19,12 @@ import { OnlinePumpAmmSdk, PUMP_AMM_SDK, canonicalPumpPoolPda } from "@pump-fun/
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
-const REAL_PUMP_TRADING_ENABLED = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" && process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
+// A deployment flag alone is not evidence that real trading is safe. Keep live
+// transactions disabled until the integrated transaction path has been explicitly verified.
+const REAL_PUMP_TRADING_ENABLED =
+  process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" &&
+  process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true" &&
+  process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED === "true";
 const TOKEN_DECIMALS_FALLBACK = 6;
 const PUMP_SLIPPAGE_PERCENT = 5;
 
@@ -350,30 +355,17 @@ export function TradePanel({
     }
     setPending(true);
     try {
-      if (REAL_PUMP_TRADING_ENABLED) {
-        const signature = await handleLiveTrade();
-        setLastSignature(signature);
-        toast({
-          title: side === "BUY" ? "Buy confirmed on Solana" : "Sell confirmed on Solana",
-          description: "Transaction confirmed. " + signature.slice(0, 8) + "…",
-        });
-        setAmount("");
-        setBalanceRefresh((value) => value + 1);
-        onTraded();
-        return;
+      if (!REAL_PUMP_TRADING_ENABLED) {
+        throw new Error("Live trading is disabled until the mainnet transaction flow has passed validation. No transaction was sent.");
       }
-
-      if (side === "BUY" && (!Number.isFinite(amt) || amt < 0.01 || amt > 100)) {
-        throw new Error("Buy between 0.01 and 100 SOL.");
-      }
-      if (side === "SELL" && (!myHolding || myHolding.amount <= 0)) throw new Error("No demo tokens to sell.");
-      const body = side === "BUY" ? { side, solAmount: amt } : { side, percent };
-      const result = await post<TradeResponse>("/api/tokens/" + token.id + "/trade", body);
+      const signature = await handleLiveTrade();
+      setLastSignature(signature);
       toast({
-        title: side === "BUY" ? "Demo buy recorded" : "Demo sell recorded",
-        description: "Simulation only — no SOL or tokens moved. Demo amount: " + compact(result.trade.tokenAmount) + " " + token.symbol + ".",
+        title: side === "BUY" ? "Buy confirmed on Solana" : "Sell confirmed on Solana",
+        description: "Transaction confirmed. " + signature.slice(0, 8) + "…",
       });
-      if (side === "BUY") setAmount("");
+      setAmount("");
+      setBalanceRefresh((value) => value + 1);
       onTraded();
     } catch (error) {
       toast({
