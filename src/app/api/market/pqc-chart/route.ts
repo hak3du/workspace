@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const VALID_RANGES = new Set(["1H", "1D", "1W", "1M"]);
+export const VALID_RANGES = new Set(["1H", "1D", "1W", "1M"]);
 const VALID_MINT = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const GECKO_RANGES: Record<string, { unit: "minute" | "hour"; aggregate: number; limit: number }> = {
+export const GECKO_RANGES: Record<string, { unit: "minute" | "hour"; aggregate: number; limit: number }> = {
   "1H": { unit: "minute", aggregate: 1, limit: 60 },
   "1D": { unit: "minute", aggregate: 15, limit: 96 },
   "1W": { unit: "hour", aggregate: 1, limit: 168 },
@@ -35,7 +35,7 @@ function asTimestamp(value: unknown): number | null {
   return Math.floor(numeric > 1_000_000_000_000 ? numeric / 1000 : numeric);
 }
 
-function normalizeCandle(value: unknown): Candle | null {
+export function normalizeCandle(value: unknown): Candle | null {
   let t: unknown, o: unknown, h: unknown, l: unknown, c: unknown, v: unknown;
   if (Array.isArray(value)) {
     [t, o, h, l, c, v] = value;
