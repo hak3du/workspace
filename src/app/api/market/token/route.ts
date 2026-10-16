@@ -124,7 +124,12 @@ export async function GET(request: NextRequest) {
             (pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
            pair.quoteToken?.address?.toLowerCase() === mint.toLowerCase())
           )
-          .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+          .sort((a, b) => {
+            const aIsBase = a.baseToken?.address?.toLowerCase() === mint.toLowerCase();
+            const bIsBase = b.baseToken?.address?.toLowerCase() === mint.toLowerCase();
+            if (aIsBase !== bIsBase) return aIsBase ? -1 : 1;
+            return (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0);
+          });
       }
     } catch {
       // A valid on-chain mint can exist without a current Dexscreener listing.
