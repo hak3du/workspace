@@ -136,7 +136,15 @@ export function TradePanel({
       setQuoteError(null);
       try {
         const curve = await sdk.fetchBondingCurve(mint);
-        if (curve.complete) throw new Error("This token has graduated. AMM routing is not enabled in this first trading slice.");
+        if (curve.complete) {
+          if (active) {
+            setGraduated(true);
+            setBuyQuote(null);
+            setQuoteError(null);
+          }
+          return;
+        }
+        if (active) setGraduated(false);
         if (!curve.quoteMint.equals(PublicKey.default)) throw new Error("This first live trading slice supports SOL-quoted Pump bonding curves only.");
         const tokenProgram = await resolveBaseTokenProgram(mint);
         const [buyState, global, feeConfig] = await Promise.all([
