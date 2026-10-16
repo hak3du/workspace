@@ -54,7 +54,8 @@ function normalizeCandle(value: unknown): Candle | null {
   const open = asNumber(o), high = asNumber(h), low = asNumber(l), close = asNumber(c);
   const volume = asNumber(v) ?? 0;
   if (timestamp === null || open === null || high === null || low === null || close === null ||
-      open < 0 || high < 0 || low < 0 || close < 0 || volume < 0) return null;
+      open <= 0 || high <= 0 || low <= 0 || close <= 0 || volume < 0 ||
+      high < Math.max(open, close, low) || low > Math.min(open, close, high)) return null;
   return { t: timestamp, o: open, h: high, l: low, c: close, v: volume };
 }
 
@@ -128,30 +129,13 @@ async function geckoFallback(mint: string, range: string): Promise<{ candles: Ca
     // Continue to the market-pair lookup; a provider outage should not abort chart recovery.
   }
 
-  // Compatibility fallback if the token-pools endpoint did not return a usable pool.
+  // Never treat a DexScreener pair address as a GeckoTerminal pool ID.
+  // Those identifiers are not guaranteed to match. If GeckoTerminal cannot
+  // resolve a pool, let the caller try Birdeye instead of requesting candles
+  // from an unverified address.
   if (!poolAddress) {
-    const dexResponse = await fetch("https://api.dexscreener.com/latest/dex/tokens/" + encodeURIComponent(mint), {
-      cache: "no-store",
-      signal: AbortSignal.timeout(8_000),
-    });
-    if (!dexResponse.ok) throw new Error("DexScreener pair lookup failed.");
-    const dexPayload = await dexResponse.json() as {
-      pairs?: Array<{
-        chainId?: string;
-        pairAddress?: string;
-        baseToken?: { address?: string };
-        quoteToken?: { address?: string };
-        liquidity?: { usd?: number };
-      }>;
-    };
-    const pair = (dexPayload.pairs || [])
-      .filter((item) => item.chainId === "solana" && item.pairAddress &&
-        (item.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
-         item.quoteToken?.address?.toLowerCase() === mint.toLowerCase()))
-      .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
-    if (!pair?.pairAddress) return { candles: [], pairAddress: "", tokenSide: "base" };
-    poolAddress = pair.pairAddress;
-    tokenSide = pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ? "base" : "quote";
+    if (lastGood) return lastGood;
+    return { candles: [], pairAddress: "", tokenSide: "base" };
   }
 
   const tf = GECKO_RANGES[range];
