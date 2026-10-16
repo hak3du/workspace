@@ -60,7 +60,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ anchored: false, error: "Registered wallet is not a transaction signer." }, { status: 422 });
     }
 
-    const memoFound = message.instructions.some((instruction) => {
+    // Legacy messages expose `instructions`; v0 messages expose `compiledInstructions`.
+    // Both arrays contain compiled instructions whose data is base58 encoded.
+    const compiledInstructions =
+      "compiledInstructions" in message ? message.compiledInstructions : message.instructions;
+    const memoFound = compiledInstructions.some((instruction) => {
       const programId = accountKeys[instruction.programIdIndex];
       if (programId !== MEMO_PROGRAM) return false;
       try {
