@@ -12,6 +12,7 @@
                     "db:migrate":  "prisma migrate dev",
                     "db:reset":  "prisma migrate reset",
                     "test":  "bun test",
+                    "test:pump-smoke":  "bun run scripts/pump-live-smoke.ts",
                     "typecheck":  "tsc --noEmit"
                 },
     "dependencies":  {
