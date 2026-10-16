@@ -51,6 +51,7 @@ model WalletChallenge {
   userId    String
   address   String
   nonce     String   @unique
+  message   String
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime @default(now())
