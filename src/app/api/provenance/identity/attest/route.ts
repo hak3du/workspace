@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: "PQC signature did not verify against the registered identity root.", trace }, { status: 422 });
     }
 
-    const signatureJson = JSON.stringify(pqSignature);
+    const signatureJson = JSON.stringify({ leaf: pqSignature.leaf, wots: pqSignature.wots, auth: pqSignature.auth });
     if (reservation.status === "SIGNED" || reservation.status === "ANCHORED") {
       if (reservation.signatureJson === signatureJson) {
         return NextResponse.json({ valid: true, idempotent: true, status: reservation.status, mint: reservation.mint, leaf: reservation.leaf, digest: digestHex });
@@ -77,15 +77,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: "This one-time leaf already has a different accepted signature. Never sign again with this leaf." }, { status: 409 });
     }
 
-    const updated = await db.pqLeafUse.update({
-      where: { id: reservation.id },
+    // Conditional update makes signature acceptance single-writer under concurrency.
+    const accepted = await db.pqLeafUse.updateMany({
+      where: { id: reservation.id, status: "RESERVED", signatureJson: null },
       data: { status: "SIGNED", signatureJson, signedAt: new Date() },
     });
+    if (accepted.count !== 1) {
+      const latest = await db.pqLeafUse.findUnique({ where: { id: reservation.id } });
+      if (latest?.signatureJson === signatureJson && (latest.status === "SIGNED" || latest.status === "ANCHORED")) {
+        return NextResponse.json({ valid: true, idempotent: true, status: latest.status, mint: latest.mint, leaf: latest.leaf, digest: digestHex });
+      }
+      return NextResponse.json({ valid: false, error: "Another signature already consumed this one-time leaf. Never sign again with it." }, { status: 409 });
+    }
     return NextResponse.json({
       valid: true,
-      status: updated.status,
-      mint: updated.mint,
-      leaf: updated.leaf,
+      status: "SIGNED",
+      mint: reservation.mint,
+      leaf: reservation.leaf,
       digest: digestHex,
       scheme: "WOTS(w=16,SHA-256)+Merkle",
       anchoredOnChain: false,
