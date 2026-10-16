@@ -96,7 +96,6 @@ async function birdeyeFallback(mint: string, range: string): Promise<Candle[]> {
   url.searchParams.set("time_from", String(now - timeframe.seconds));
   url.searchParams.set("time_to", String(now));
   url.searchParams.set("mode", "range");
-  url.searchParams.set("count_limit", "1000");
 
   const response = await fetch(url.toString(), {
     headers: { accept: "application/json", "X-API-KEY": apiKey, "x-chain": "solana" },
