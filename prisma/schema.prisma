@@ -32,6 +32,7 @@ model User {
   apiKeys      ApiKey[]
   wallets      Wallet[]
   notifications Notification[]
+  pqIdentity    PqIdentity?
 }
 
 model Wallet {
@@ -274,4 +275,58 @@ model Config {
   key       String   @unique // e.g. ahe_master_secret (never exposed)
   value     String
   updatedAt DateTime @default(now())
+}
+
+
+// ------- PQC identity and one-time launch attestation state -------
+// These models require a database migration before they can be used in production.
+// A unique (identityId, leaf) constraint prevents concurrent reuse of an XMSS/WOTS leaf.
+model PqIdentity {
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  walletAddress String      @unique
+  pqAddress     String      @unique
+  root          String
+  pubSeed       String
+  height        Int         @default(8)
+  scheme        String      @default("WOTS(w=16,SHA-256)+Merkle")
+  status        String      @default("ACTIVE") // ACTIVE | ROTATING | REVOKED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaves        PqLeafUse[]
+}
+
+model PqLeafUse {
+  id             String     @id @default(cuid())
+  identityId     String
+  leaf           Int
+  messageDigest  String     @unique
+  mint           String     @unique
+  status         String     @default("RESERVED") // RESERVED | SIGNED | ANCHORED | FAILED
+  reservedAt     DateTime   @default(now())
+  signedAt       DateTime?
+  anchoredAt     DateTime?
+  identity       PqIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, leaf])
+}
+
+// Exact lamport accounting. This ledger is evidence/reconciliation state, not a
+// substitute for on-chain fee configuration or actual creator/platform transfers.
+model CreatorFeeSettlement {
+  id                String   @id @default(cuid())
+  txSignature       String   @unique
+  tokenMint         String
+  creatorWallet     String
+  platformWallet    String
+  grossLamports     BigInt
+  creatorLamports   BigInt
+  platformLamports  BigInt
+  status            String   @default("OBSERVED") // OBSERVED | CONFIRMED | RECONCILED | DISPUTED
+  slot              BigInt?
+  blockTime         DateTime?
+  observedAt        DateTime @default(now())
+  confirmedAt       DateTime?
+  reconciledAt      DateTime?
 }
