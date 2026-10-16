@@ -303,6 +303,7 @@ model PqLeafUse {
   leaf           Int
   messageDigest  String     @unique
   mint           String     @unique
+  canonicalJson  String
   status         String     @default("RESERVED") // RESERVED | SIGNED | ANCHORED | FAILED
   reservedAt     DateTime   @default(now())
   signedAt       DateTime?
