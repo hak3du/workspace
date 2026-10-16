@@ -73,6 +73,51 @@ function extractCandles(payload: Record<string, unknown>): Candle[] {
  * GeckoTerminal OHLCV. This also supports valid Solana tokens that have a
  * market pair but are not present in PQC's own launch database.
  */
+/**
+ * Optional authenticated OHLCV fallback matching PQC Market's Birdeye data stack.
+ * Keep the API key server-side; without it the public GeckoTerminal fallback remains available.
+ */
+async function birdeyeFallback(mint: string, range: string): Promise<Candle[]> {
+  const apiKey = process.env.BIRDEYE_API_KEY;
+  if (!apiKey) return [];
+
+  const settings: Record<string, { type: string; seconds: number }> = {
+    "1H": { type: "1m", seconds: 60 * 60 },
+    "1D": { type: "15m", seconds: 24 * 60 * 60 },
+    "1W": { type: "1H", seconds: 7 * 24 * 60 * 60 },
+    "1M": { type: "4H", seconds: 30 * 24 * 60 * 60 },
+  };
+  const timeframe = settings[range];
+  const now = Math.floor(Date.now() / 1000);
+  const url = new URL("https://public-api.birdeye.so/defi/v3/ohlcv");
+  url.searchParams.set("address", mint);
+  url.searchParams.set("type", timeframe.type);
+  url.searchParams.set("currency", "usd");
+  url.searchParams.set("time_from", String(now - timeframe.seconds));
+  url.searchParams.set("time_to", String(now));
+  url.searchParams.set("mode", "range");
+  url.searchParams.set("count_limit", "1000");
+
+  const response = await fetch(url.toString(), {
+    headers: { accept: "application/json", "X-API-KEY": apiKey, "x-chain": "solana" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) throw new Error("Birdeye OHLCV request failed (" + response.status + ").");
+  const payload = await response.json() as { data?: { items?: Array<Record<string, unknown>> } };
+  return (payload.data?.items || [])
+    .map((item) => normalizeCandle({
+      t: item.unix_time ?? item.unixTime,
+      o: item.o,
+      h: item.h,
+      l: item.l,
+      c: item.c,
+      v: item.v_usd ?? item.v ?? 0,
+    }))
+    .filter((item): item is Candle => item !== null)
+    .sort((a, b) => a.t - b.t);
+}
+
 async function geckoFallback(mint: string, range: string): Promise<Candle[]> {
   const dexResponse = await fetch("https://api.dexscreener.com/latest/dex/tokens/" + encodeURIComponent(mint), {
     cache: "no-store",
@@ -139,23 +184,37 @@ export async function GET(request: NextRequest) {
     pqcError = error instanceof Error ? error.message : "PQC Market request failed.";
   }
 
+  let birdeyeError: string | null = null;
+  try {
+    const candles = await birdeyeFallback(mint, range);
+    if (candles.length) {
+      return NextResponse.json({
+        candles, candlesOk: true, source: "birdeye",
+        fetchedAt: new Date().toISOString(), candleCount: candles.length,
+        warning: "PQC Market candles were unavailable; showing Birdeye OHLCV.",
+      }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+    }
+  } catch (error) {
+    birdeyeError = error instanceof Error ? error.message : "Birdeye OHLCV request failed.";
+  }
+
   try {
     const candles = await geckoFallback(mint, range);
     if (candles.length) {
       return NextResponse.json({
         candles, candlesOk: true, source: "geckoterminal",
         fetchedAt: new Date().toISOString(), candleCount: candles.length,
-        warning: "PQC Market candles were unavailable; showing GeckoTerminal OHLCV for the deepest indexed DexScreener pair.",
+        warning: "PQC Market" + (birdeyeError ? " and Birdeye" : "") + " candles were unavailable; showing GeckoTerminal OHLCV for the deepest indexed DexScreener pair.",
       }, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
     return NextResponse.json({
-      error: "Neither PQC Market nor GeckoTerminal returned candles for this mint and timeframe.",
-      upstreamError: pqcError, candles: [], candlesOk: false, source: "none", candleCount: 0,
+      error: "PQC Market, Birdeye, and GeckoTerminal returned no candles for this mint and timeframe.",
+      upstreamError: pqcError, birdeyeError, candles: [], candlesOk: false, source: "none", candleCount: 0,
     }, { status: 200, headers: { "Cache-Control": "no-store, max-age=0" } });
   } catch (error) {
     return NextResponse.json({
-      error: "PQC Market and the GeckoTerminal fallback could not provide chart history.",
-      upstreamError: pqcError,
+      error: "PQC Market, Birdeye, and GeckoTerminal could not provide chart history.",
+      upstreamError: pqcError, birdeyeError,
       fallbackError: error instanceof Error ? error.message : "Chart fallback failed.",
       candles: [], candlesOk: false, source: "none",
     }, { status: 502, headers: { "Cache-Control": "no-store, max-age=0" } });
