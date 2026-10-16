@@ -14,6 +14,11 @@ const GECKO_RANGES: Record<string, { unit: "minute" | "hour"; aggregate: number;
 
 type Candle = { t: number; o: number; h: number; l: number; c: number; v: number };
 
+// Match PQC Market: cache successful GeckoTerminal series and retain last-good candles
+// so provider throttling does not turn an already-rendered chart into an empty graph.
+const geckoCandleCache = new Map<string, { expiresAt: number; candles: Candle[]; pairAddress: string; tokenSide: "base" | "quote" }>();
+const geckoLastGood = new Map<string, { candles: Candle[]; pairAddress: string; tokenSide: "base" | "quote" }>();
+
 function asNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
@@ -74,6 +79,12 @@ function extractCandles(payload: Record<string, unknown>): Candle[] {
  * market pair but are not present in PQC's own launch database.
  */
 async function geckoFallback(mint: string, range: string): Promise<{ candles: Candle[]; pairAddress: string; tokenSide: "base" | "quote" }> {
+  const cacheKey = mint + ":" + range;
+  const cached = geckoCandleCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return { candles: cached.candles, pairAddress: cached.pairAddress, tokenSide: cached.tokenSide };
+  }
+  const lastGood = geckoLastGood.get(cacheKey);
   // PQC Market resolves the actual GeckoTerminal pool and charts that pool.
   // Do the same here: a DexScreener pairAddress is not guaranteed to be a
   // GeckoTerminal pool address, which caused valid tokens to return blank charts.
@@ -158,7 +169,16 @@ async function geckoFallback(mint: string, range: string): Promise<{ candles: Ca
     .map(([t, o, h, l, c, v]) => ({ t, o, h, l, c, v }))
     .filter((item) => [item.t, item.o, item.h, item.l, item.c, item.v].every(Number.isFinite))
     .reverse();
-  return { candles, pairAddress: poolAddress, tokenSide };
+  if (candles.length) {
+    const result = { candles, pairAddress: poolAddress, tokenSide };
+    geckoLastGood.set(cacheKey, result);
+    geckoCandleCache.set(cacheKey, { ...result, expiresAt: Date.now() + 60_000 });
+    if (geckoLastGood.size > 2_000) geckoLastGood.delete(geckoLastGood.keys().next().value!);
+    if (geckoCandleCache.size > 2_000) geckoCandleCache.delete(geckoCandleCache.keys().next().value!);
+    return result;
+  }
+  if (lastGood) return lastGood;
+  return { candles: [], pairAddress: poolAddress, tokenSide };
 }
 
 type BirdeyeCandle = { unix_time: number; o: number; h: number; l: number; c: number; v_usd: number };
