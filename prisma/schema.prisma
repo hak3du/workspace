@@ -43,7 +43,7 @@ model Wallet {
   provider  String   @default("Unverified") // Display label only; ownership requires signed challenge
   verified  Boolean  @default(false)
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WalletChallenge {
