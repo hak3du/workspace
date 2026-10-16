@@ -12,6 +12,7 @@
                     "db:migrate":  "prisma migrate dev",
                     "db:reset":  "prisma migrate reset",
                     "test":  "bun test",
+                    "test:pump-smoke":  "bun run scripts/pump-live-smoke.ts",
                     "typecheck":  "tsc --noEmit"
                 },
     "dependencies":  {
@@ -21,7 +22,8 @@
                          "@hookform/resolvers":  "^5.1.1",
                          "@mdxeditor/editor":  "^3.39.1",
                          "@prisma/client":  "^6.11.1",
-                         "@pump-fun/pump-sdk":  "^4.0.0",
+                         "@pump-fun/pump-sdk":  "4.1.0",
+                         "@pump-fun/pump-swap-sdk":  "2.1.0",
                          "@radix-ui/react-accordion":  "^1.2.11",
                          "@radix-ui/react-alert-dialog":  "^1.1.14",
                          "@radix-ui/react-aspect-ratio":  "^1.1.7",

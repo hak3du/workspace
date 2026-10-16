@@ -9,7 +9,7 @@ import { Ticker } from "@/components/qe/ticker";
 import { ContextPanel } from "@/components/qe/context-panel";
 import { AiGuide } from "@/components/qe/ai-guide";
 import { Footer } from "@/components/qe/footer";
-import { DiscoverView } from "@/components/discover/discover-view";
+import { TradeDiscoverView } from "@/components/market/trade-discover-view";
 import { SpacesView } from "@/components/spaces/spaces-view";
 import { SpaceDetail } from "@/components/spaces/space-detail";
 import { StudioView } from "@/components/studio/studio-view";
@@ -62,7 +62,7 @@ export default function Home() {
 function ViewSwitch({ view }: { view: { name: ViewName; id?: string } }) {
   switch (view.name) {
     case "discover":
-      return <DiscoverView />;
+      return <TradeDiscoverView />;
     case "spaces":
       return <SpacesView />;
     case "space":
@@ -78,7 +78,7 @@ function ViewSwitch({ view }: { view: { name: ViewName; id?: string } }) {
     case "portfolio":
       return <PortfolioView />;
     default:
-      return <DiscoverView />;
+      return <TradeDiscoverView />;
   }
 }
 

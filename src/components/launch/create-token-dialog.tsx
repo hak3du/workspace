@@ -1,9 +1,8 @@
 ﻿"use client";
 
 import { useState } from "react";
-import type { FormEvent } from "react";
 import Image from "next/image";
-import { Check, ImageOff, Loader2, Rocket } from "lucide-react";
+import { Check, ImageOff, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,13 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { post } from "@/lib/api";
-import { LAUNCH_FEE_SOL } from "@/lib/bonding";
-import { sol } from "@/lib/format";
 import type { TokenDTO } from "@/lib/types";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useWallet } from "@solana/wallet-adapter-react";
 
 const PRESETS = [
   { src: "/media/token-quantum-cat.jpg", label: "Quantum Cat" },
@@ -36,73 +29,18 @@ const MAX_DESCRIPTION = 280;
 export function CreateTokenDialog({
   open,
   onOpenChange,
-  onCreated,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onCreated: (t: TokenDTO) => void;
 }) {
-  const { toast } = useToast();
-  const { connected, publicKey } = useWallet();
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   const nameOk = name.trim().length >= 2 && name.trim().length <= 32;
   const symbolOk = /^[A-Z0-9]{2,10}$/.test(symbol);
-  const descOk = description.length <= MAX_DESCRIPTION;
-  const canSubmit = nameOk && symbolOk && descOk && !pending;
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!canSubmit) return;
-
-    if (!connected || !publicKey) {
-      toast({
-        title: "Connect your Solana wallet",
-        description: "Connect Phantom before proceeding.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Real Pump.fun launch is not ready",
-      description: "Your wallet is connected, but the real Pump.fun transaction adapter is not implemented yet. No token was created and no funds were sent.",
-      variant: "destructive",
-    });
-    return;
-
-    setPending(true);
-    try {
-      const data = await post<{ token: TokenDTO }>("/api/tokens", {
-        name: name.trim(),
-        symbol,
-        description: description.trim(),
-        imageUrl: imageUrl,
-      });
-      toast({
-        title: "Launch confirmed",
-        description: `${data.token.name} (${data.token.symbol}) is live on the bonding curve. Fee ${sol(LAUNCH_FEE_SOL)} settled.`,
-      });
-      setName("");
-      setSymbol("");
-      setDescription("");
-      setImageUrl(null);
-      onCreated(data.token);
-      onOpenChange(false);
-    } catch (err) {
-      toast({
-        title: "Launch failed",
-        description: err instanceof Error ? String(err) : "Something went wrong on the simulated route.",
-        variant: "destructive",
-      });
-    } finally {
-      setPending(false);
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,21 +51,12 @@ export function CreateTokenDialog({
             Launch a Token
           </DialogTitle>
           <DialogDescription>
-            Mint a simulated SPL-style token on the bonding curve. Everything is devnet-grade simulation Ã¢â‚¬â€ no real funds.
+            Real Pump.fun token creation is not integrated yet. This form is a preview only: it will not create a token, upload metadata, request a wallet signature, or charge a fee.
           </DialogDescription>
         </DialogHeader>
 
-        <section className="space-y-2 rounded-xl border border-white/10 p-3">
-          <p className="text-sm font-medium">Solana wallet</p>
-          <WalletMultiButton className="!h-10 !w-full !justify-center !rounded-lg" />
-          <p className="text-xs text-muted-foreground">
-            {connected && publicKey
-              ? `Connected: ${publicKey.toBase58().slice(0, 6)}...${publicKey.toBase58().slice(-6)}`
-              : "Connect Phantom to continue."}
-          </p>
-        </section>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={(event) => event.preventDefault()} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="token-name">Name</Label>
             <Input
@@ -219,18 +148,18 @@ export function CreateTokenDialog({
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2.5 text-xs text-violet-200">
+          <div className="flex items-start gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-100">
             <Rocket className="mt-0.5 size-3.5 shrink-0" />
-            <span>Launch fee: {sol(LAUNCH_FEE_SOL)} (simulated, itemized receipt in your wallet page).</span>
+            <span>Unavailable: the production launch adapter, metadata hosting, transaction confirmation, and fee settlement must be implemented before launch can be enabled.</span>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending} className="h-11">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-11">
               Cancel
             </Button>
-            <Button type="submit" disabled={!canSubmit} className="glow-violet h-11 min-w-36">
-              {pending ? <Loader2 className="size-4 animate-spin" /> : <Rocket className="size-4" />}
-              {pending ? "LaunchingÃ¢â‚¬Â¦" : "Launch Token"}
+            <Button type="button" disabled className="h-11 min-w-36">
+              <Rocket className="size-4" />
+              Launch unavailable
             </Button>
           </DialogFooter>
         </form>
