@@ -337,7 +337,7 @@ model CreatorFeeSettlement {
   tokenMint         String
   creatorWallet     String
   platformWallet    String
-  grossLamports     BigInt
+  totalObservedLamports BigInt
   creatorLamports   BigInt
   platformLamports  BigInt
   status            String   @default("OBSERVED") // OBSERVED | CONFIRMED | RECONCILED | DISPUTED
