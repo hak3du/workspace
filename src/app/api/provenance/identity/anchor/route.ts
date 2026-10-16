@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       commitment: "confirmed",
       maxSupportedTransactionVersion: 0,
     });
-    if (!tx || tx.meta?.err) {
+    if (!tx || !tx.meta || tx.meta.err) {
       return NextResponse.json({ anchored: false, error: "Anchor transaction is missing or failed on Solana." }, { status: 422 });
     }
 
