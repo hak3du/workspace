@@ -4,7 +4,7 @@ import { verify as verifyEd25519 } from "node:crypto";
 import { PublicKey } from "@solana/web3.js";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/lib/db";
-import { registrationStatement } from "@/lib/pq/messages";
+import { aheIdentityRegistrationMessage } from "@/lib/pq/messages";
 import { pqAddress as derivePqAddress, type PqPublicKey } from "@/lib/pq/xmss";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "pqAddress does not match the supplied public key." }, { status: 400 });
   }
 
-  const message = registrationStatement({
+  const message = aheIdentityRegistrationMessage({
+    accountId: session.user.id,
     wallet: walletKey.toBase58(),
     pqAddress: expectedPqAddress,
     root: publicKey.root,
