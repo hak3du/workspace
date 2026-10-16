@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 const WSOL_MINT = "So11111111111111111111111111111111111111112";
-const ENABLED = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" && process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "false";
+const ENABLED = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" && process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 const SLIPPAGE_BPS = 100;
 
 type Order = {
