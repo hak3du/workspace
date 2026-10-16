@@ -20,6 +20,7 @@ const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
 const REAL_PUMP_TRADING_ENABLED = process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" && process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true";
 const TOKEN_DECIMALS_FALLBACK = 6;
+const PUMP_SLIPPAGE_PERCENT = 5;
 
 interface TradeResponse {
   trade: TradeDTO;
@@ -92,9 +93,10 @@ export function TradePanel({
         return;
       }
       try {
+        const mintSupply = await connection.getTokenSupply(mint, "confirmed");
         const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint });
         let raw = BigInt(0);
-        let decimals = TOKEN_DECIMALS_FALLBACK;
+        let decimals = mintSupply.value.decimals;
         for (const account of accounts.value) {
           const info = account.account.data.parsed.info;
           raw += BigInt(info.tokenAmount.amount as string);
@@ -140,19 +142,23 @@ export function TradePanel({
           sdk.fetchFeeConfig(),
         ]);
         const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
+        // Reserve enough of the entered SOL budget for the SDK's slippage allowance.
+        // buyInstructions applies slippage to max cost, so quoting against the full
+        // budget could otherwise permit a maximum spend above the user's input.
+        const quoteSolAmount = solAmount.muln(100).divn(100 + PUMP_SLIPPAGE_PERCENT);
         const tokensOut = getBuyTokenAmountFromSolAmount({
           global,
           feeConfig,
           mintSupply: buyState.bondingCurve.tokenTotalSupply,
           bondingCurve: buyState.bondingCurve,
-          amount: solAmount,
+          amount: quoteSolAmount,
           quoteMint: PublicKey.default,
         });
         if (tokensOut.lte(new BN(0))) throw new Error("Pump SDK returned a zero-token quote.");
         const spot = Number(buyState.bondingCurve.virtualQuoteReserves.toString()) /
           Number(buyState.bondingCurve.virtualTokenReserves.toString());
         // Both prices are lamports per raw token unit, so their ratio is dimensionless.
-        const effectivePrice = Number(solAmount.toString()) / Number(tokensOut.toString());
+        const effectivePrice = Number(quoteSolAmount.toString()) / Number(tokensOut.toString());
         if (active) {
           setBuyQuote({
             tokensOut: tokensOut.toString(),
@@ -211,6 +217,8 @@ export function TradePanel({
     if (side === "BUY") {
       if (!Number.isFinite(amt) || amt < 0.01 || amt > 100) throw new Error("Buy between 0.01 and 100 SOL.");
       const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
+      // Keep the SDK's slippage-adjusted maximum cost within the entered SOL budget.
+      const quoteSolAmount = solAmount.muln(100).divn(100 + PUMP_SLIPPAGE_PERCENT);
       const [buyState, global, feeConfig] = await Promise.all([
         sdk.fetchBuyState(mint, publicKey, tokenProgram),
         sdk.fetchGlobal(),
@@ -221,7 +229,7 @@ export function TradePanel({
         feeConfig,
         mintSupply: buyState.bondingCurve.tokenTotalSupply,
         bondingCurve: buyState.bondingCurve,
-        amount: solAmount,
+        amount: quoteSolAmount,
         quoteMint: PublicKey.default,
       });
       if (tokenAmount.lte(new BN(0))) {
@@ -237,8 +245,9 @@ export function TradePanel({
         amount: tokenAmount,
         quoteMint: PublicKey.default,
       });
-      if (maxCost.lte(new BN(0)) || maxCost.gt(solAmount)) {
-        throw new Error("Pump SDK returned an invalid buy cost; no transaction was sent.");
+      const maxCostWithSlippage = maxCost.muln(100 + PUMP_SLIPPAGE_PERCENT).addn(99).divn(100);
+      if (maxCost.lte(new BN(0)) || maxCostWithSlippage.gt(solAmount)) {
+        throw new Error("Pump SDK quote exceeds the entered SOL budget after slippage; no transaction was sent.");
       }
       const instructions = await PUMP_SDK.buyInstructions({
         global,
@@ -249,7 +258,7 @@ export function TradePanel({
         user: publicKey,
         amount: tokenAmount,
         solAmount: maxCost,
-        slippage: 5,
+        slippage: PUMP_SLIPPAGE_PERCENT,
         tokenProgram,
       });
       return await sendAndConfirm(instructions);
@@ -275,7 +284,7 @@ export function TradePanel({
       user: publicKey,
       amount: amountRaw,
       solAmount: expectedSol,
-      slippage: 5,
+      slippage: PUMP_SLIPPAGE_PERCENT,
       tokenProgram,
       mayhemMode: sellState.bondingCurve.isMayhemMode ?? false,
       cashback: sellState.bondingCurve.isCashbackCoin ?? false,
@@ -348,7 +357,7 @@ export function TradePanel({
     <div className="glass rounded-2xl p-4">
       <div className={"mb-3 rounded-lg border p-3 text-xs " + (REAL_PUMP_TRADING_ENABLED ? "border-amber-400/30 bg-amber-400/5 text-amber-100" : "border-white/10 bg-white/[0.03] text-muted-foreground")}>
         {REAL_PUMP_TRADING_ENABLED
-          ? "LIVE Pump.fun trading · 5% slippage cap · inspect the wallet transaction before signing. Bonding-curve tokens only in this slice."
+          ? "LIVE Pump.fun trading · 5% slippage tolerance · SOL budget includes the slippage reserve. Inspect the wallet transaction before signing. Bonding-curve tokens only in this slice."
           : "DEMO ONLY · simulated buys and sells · no SOL or tokens move."}
         {quoteLoading ? " Fetching live quote…" : quoteError ? " " + quoteError : ""}
       </div>
@@ -366,10 +375,10 @@ export function TradePanel({
           <Input type="number" inputMode="decimal" min={0.01} max={100} step={0.01} value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Amount in SOL (0.01–100)" aria-label="Amount in SOL to buy" />
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
             <span className="text-xs text-muted-foreground">Estimated tokens out</span>
-            <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? compact(Number(buyQuote.tokensOut) / 10 ** TOKEN_DECIMALS_FALLBACK) + " " + token.symbol : "—") : (demoBuyOut > 0 ? compact(demoBuyOut) + " " + token.symbol : "—")}</span>
+            <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? compact(Number(buyQuote.tokensOut) / 10 ** walletTokenDecimals) + " " + token.symbol : "—") : (demoBuyOut > 0 ? compact(demoBuyOut) + " " + token.symbol : "—")}</span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Price impact</span>
+            <span>Effective price impact (fees included)</span>
             <span>{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? "~" + buyQuote.impactPct.toFixed(2) + "%" : "—") : (demoBuyOut > 0 ? "~" + (((demoEffectiveSol / demoBuyOut / demoSpot) - 1) * 100).toFixed(2) + "%" : "—")}</span>
           </div>
         </TabsContent>
