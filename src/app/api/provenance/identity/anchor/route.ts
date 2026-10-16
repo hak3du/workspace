@@ -51,7 +51,10 @@ export async function POST(request: NextRequest) {
     }
 
     const message = tx.transaction.message;
-    const accountKeys = message.accountKeys.map((key) => key.toBase58());
+    const staticKeys = "accountKeys" in message ? message.accountKeys : message.staticAccountKeys;
+    const loadedWritable = tx.meta?.loadedAddresses?.writable ?? [];
+    const loadedReadonly = tx.meta?.loadedAddresses?.readonly ?? [];
+    const accountKeys = [...staticKeys, ...loadedWritable, ...loadedReadonly].map((key) => key.toBase58());
     const walletSignerIndex = accountKeys.indexOf(identity.walletAddress);
     if (walletSignerIndex < 0 || walletSignerIndex >= message.header.numRequiredSignatures) {
       return NextResponse.json({ anchored: false, error: "Registered wallet is not a transaction signer." }, { status: 422 });
