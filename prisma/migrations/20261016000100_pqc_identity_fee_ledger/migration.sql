@@ -1,9 +1,7 @@
 -- Durable state for PQC identity registration, one-time leaf allocation,
 -- and exact-lamport fee reconciliation. Apply only after configuring the target DB.
 -- Replace simulated/implicitly-trusted wallet rows with explicitly unverified rows.
-PRAGMA foreign_keys=OFF;
-BEGIN;
-ALTER TABLE "Wallet" RENAME TO "Wallet_old";
+ ALTER TABLE "Wallet" RENAME TO "Wallet_old";
 CREATE TABLE "Wallet" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "userId" TEXT NOT NULL,
@@ -89,5 +87,3 @@ CREATE TABLE "CreatorFeeSettlement" (
 
 CREATE UNIQUE INDEX "CreatorFeeSettlement_txSignature_key" ON "CreatorFeeSettlement"("txSignature");
 
-COMMIT;
-PRAGMA foreign_keys=ON;
