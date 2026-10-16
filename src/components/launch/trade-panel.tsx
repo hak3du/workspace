@@ -391,10 +391,9 @@ export function TradePanel({
     );
   }
 
-  const liveBlocked = REAL_PUMP_TRADING_ENABLED && (
-    !mint || (side === "BUY" && (quoteLoading || (!graduated && (!buyQuote || Boolean(quoteError))))) ||
-    (side === "SELL" && walletTokenAmount <= 0)
-  );
+  const liveBlocked = !REAL_PUMP_TRADING_ENABLED || !mint ||
+    (side === "BUY" && (quoteLoading || (!graduated && (!buyQuote || Boolean(quoteError))))) ||
+    (side === "SELL" && walletTokenAmount <= 0);
 
   return (
     <div className="glass rounded-2xl p-4">
@@ -403,7 +402,7 @@ export function TradePanel({
           ? (graduated
               ? "LIVE PumpSwap trading · graduated token · 5% slippage tolerance. Quote preview is unavailable here; inspect the wallet transaction before signing."
               : "LIVE Pump.fun trading · 5% slippage tolerance. SOL budget is the maximum input. Inspect the wallet transaction before signing.")
-          : "DEMO ONLY · simulated buys and sells · no SOL or tokens move."}
+          : "TRADING DISABLED · preview estimates only. No trade is submitted until live transaction validation is explicitly approved."}
         {quoteLoading ? " Fetching live quote…" : quoteError ? " " + quoteError : ""}
       </div>
 
@@ -419,18 +418,18 @@ export function TradePanel({
           </div>
           <Input type="number" inputMode="decimal" min={0.01} max={100} step={0.01} value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Amount in SOL (0.01–100)" aria-label="Amount in SOL to buy" />
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
-            <span className="text-xs text-muted-foreground">Estimated tokens out</span>
+            <span className="text-xs text-muted-foreground">Preview estimate · not executable</span>
             <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? compact(Number(buyQuote.tokensOut) / 10 ** walletTokenDecimals) + " " + token.symbol : "—") : (demoBuyOut > 0 ? compact(demoBuyOut) + " " + token.symbol : "—")}</span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Effective price impact (fees included)</span>
+            <span>Indicative price impact · preview only</span>
             <span>{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? "~" + buyQuote.impactPct.toFixed(2) + "%" : "—") : (demoBuyOut > 0 ? "~" + (((demoEffectiveSol / demoBuyOut / demoSpot) - 1) * 100).toFixed(2) + "%" : "—")}</span>
           </div>
         </TabsContent>
 
         <TabsContent value="SELL" className="space-y-4 pt-3">
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
-            <span className="text-xs text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "On-chain wallet balance" : "Demo holding"}</span>
+            <span className="text-xs text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "On-chain wallet balance" : "Preview holding · not on-chain"}</span>
             <span className="font-medium">{REAL_PUMP_TRADING_ENABLED ? compact(walletTokenAmount) + " " + token.symbol : (myHolding ? compact(myHolding.amount) + " " + token.symbol : "0 " + token.symbol)}</span>
           </div>
           <div className="grid grid-cols-4 gap-2">
@@ -440,16 +439,16 @@ export function TradePanel({
             <span className="text-xs text-muted-foreground">Selling</span>
             <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? compact(Number(realSellRaw.toString()) / 10 ** walletTokenDecimals) + " " + token.symbol : compact(demoTokenIn) + " " + token.symbol}</span>
           </div>
-          {!REAL_PUMP_TRADING_ENABLED && <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Estimated SOL out</span><span>{demoSellReceive > 0 ? sol(demoSellReceive) : "—"}</span></div>}
+          {!REAL_PUMP_TRADING_ENABLED && <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Indicative SOL out · preview only</span><span>{demoSellReceive > 0 ? sol(demoSellReceive) : "—"}</span></div>}
         </TabsContent>
       </Tabs>
 
-      <Button className={"mt-4 h-11 w-full " + (side === "BUY" ? "glow-violet" : "bg-red-500 text-white hover:bg-red-500/90")} onClick={handleSubmit} disabled={pending || (side === "BUY" && (!(amt > 0) || amount === "")) || (REAL_PUMP_TRADING_ENABLED && (liveBlocked || (side === "SELL" && realSellRaw <= BigInt(0))))}>
+      <Button className={"mt-4 h-11 w-full " + (side === "BUY" ? "glow-violet" : "bg-red-500 text-white hover:bg-red-500/90")} onClick={handleSubmit} disabled={pending || liveBlocked || (side === "BUY" && (!(amt > 0) || amount === "")) || (REAL_PUMP_TRADING_ENABLED && side === "SELL" && realSellRaw <= BigInt(0))}>
         {pending && <Loader2 className="size-4 animate-spin" />}
-        {pending ? (REAL_PUMP_TRADING_ENABLED ? "Waiting for Solana confirmation…" : "Recording demo…") : REAL_PUMP_TRADING_ENABLED ? (side === "BUY" ? "Buy on Solana" : "Sell on Solana") : (side === "BUY" ? "Record demo buy" : "Record demo sell")}
+        {pending ? "Waiting for Solana confirmation…" : !REAL_PUMP_TRADING_ENABLED ? "Live trading disabled" : (side === "BUY" ? "Buy on Solana" : "Sell on Solana")}
       </Button>
       {lastSignature && <a className="mt-2 block break-all text-center text-xs text-violet-300 underline" href={"https://solscan.io/tx/" + encodeURIComponent(lastSignature)} target="_blank" rel="noreferrer">Inspect confirmed transaction on Solscan</a>}
-      <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "Network fees and Pump protocol fees apply. No transaction is sent unless you approve it in your wallet." : "DEMO ONLY · no funds move"}</p>
+      <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "Network fees and Pump protocol fees apply. No transaction is sent unless you approve it in your wallet." : "Preview only · no transaction is submitted and no simulated trade is recorded."}</p>
     </div>
   );
 }
