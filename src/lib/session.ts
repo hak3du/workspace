@@ -1,24 +1,34 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import { db } from "@/lib/db";
 
-// Demo session user — this build still has no full authentication flow; every
-// visitor is attributed to the seeded "@nova" account. Auth and wallet remain
-// separate. Upsert avoids duplicate-create races on concurrent first requests.
-export async function getSessionUser() {
-  return db.user.upsert({
-    where: { handle: "@nova" },
-    update: {},
-    create: {
-      handle: "@nova",
-      displayName: "Nova Reyes",
-      avatarEmoji: "🛸",
-      avatarColor: "#8b5cf6",
-      bio: "Explorer of the Quantum universe. Building at the edge of media and crypto.",
-      role: "CREATOR",
-      verified: true,
-    },
-  });
+export class AuthenticationRequiredError extends Error {
+  readonly statusCode = 401;
+  constructor() {
+    super("Authentication required. Sign in before performing this action.");
+    this.name = "AuthenticationRequiredError";
+  }
 }
 
+/**
+ * Resolves the user from a verified NextAuth session. Never creates or falls
+ * back to a shared demo user. API routes must map AuthenticationRequiredError
+ * to HTTP 401 instead of treating an anonymous visitor as @nova.
+ */
+export async function getSessionUser() {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+  if (!userId) throw new AuthenticationRequiredError();
+
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AuthenticationRequiredError();
+  return user;
+}
+
+/**
+ * Explicitly named helper for importing/creating non-authenticated display
+ * records only. Never use this helper to authorize a request or infer identity.
+ */
 export async function ensureUserByHandle(
   handle: string,
   defaults: Partial<{

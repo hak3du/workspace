@@ -44,6 +44,35 @@ export function registrationStatement(p: {
   ].join("\n");
 }
 
+/**
+ * AHE Market account-bound PQ identity registration statement. Including the
+ * authenticated application account prevents a captured wallet signature
+ * from being replayed to register the same public identity under another user.
+ */
+export function aheIdentityRegistrationMessage(p: {
+  accountId: string;
+  wallet: string;
+  pqAddress: string;
+  root: string;
+  pubSeed: string;
+  height: number;
+}) {
+  return [
+    "AHE Market — Register Post-Quantum Identity v1",
+    "",
+    "Sign this message to bind the following public PQ identity to your authenticated AHE Market account.",
+    "This is not a transaction and costs no SOL. Never sign this exact message on another site.",
+    "",
+    `Account: ${p.accountId}`,
+    `Wallet: ${p.wallet}`,
+    `PQ address: ${p.pqAddress}`,
+    `Root: ${p.root}`,
+    `Public seed: ${p.pubSeed}`,
+    `Tree height: ${p.height}`,
+    "Scheme: WOTS(w=16,SHA-256)+Merkle",
+  ].join("\n");
+}
+
 /** Domain-separated digest over sorted key/value fields. */
 export function digest(domain: string, fields: Record<string, string | number>) {
   const body = Object.keys(fields)

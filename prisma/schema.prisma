@@ -31,17 +31,33 @@ model User {
   reactions    Reaction[]
   apiKeys      ApiKey[]
   wallets      Wallet[]
+  walletChallenges WalletChallenge[]
   notifications Notification[]
+  pqIdentity    PqIdentity?
 }
 
 model Wallet {
   id        String   @id @default(cuid())
   userId    String
   address   String   @unique
-  provider  String   @default("Simulated Phantom") // Phantom | Solflare (simulated)
-  verified  Boolean  @default(true)
+  provider  String   @default("Unverified") // Display label only; ownership requires signed challenge
+  verified  Boolean  @default(false)
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WalletChallenge {
+  id        String   @id @default(cuid())
+  userId    String
+  address   String
+  nonce     String   @unique
+  message   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, address])
 }
 
 model Space {
@@ -274,4 +290,60 @@ model Config {
   key       String   @unique // e.g. ahe_master_secret (never exposed)
   value     String
   updatedAt DateTime @default(now())
+}
+
+
+// ------- PQC identity and one-time launch attestation state -------
+// These models require a database migration before they can be used in production.
+// A unique (identityId, leaf) constraint prevents concurrent reuse of an XMSS/WOTS leaf.
+model PqIdentity {
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  walletAddress String      @unique
+  pqAddress     String      @unique
+  root          String
+  pubSeed       String
+  height        Int         @default(8)
+  scheme        String      @default("WOTS(w=16,SHA-256)+Merkle")
+  status        String      @default("ACTIVE") // ACTIVE | ROTATING | REVOKED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaves        PqLeafUse[]
+}
+
+model PqLeafUse {
+  id             String     @id @default(cuid())
+  identityId     String
+  leaf           Int
+  messageDigest  String     @unique
+  mint           String     @unique
+  canonicalJson  String
+  signatureJson  String?
+  status         String     @default("RESERVED") // RESERVED | SIGNED | ANCHORED | FAILED
+  reservedAt     DateTime   @default(now())
+  signedAt       DateTime?
+  anchoredAt     DateTime?
+  identity       PqIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, leaf])
+}
+
+// Exact lamport accounting. This ledger is evidence/reconciliation state, not a
+// substitute for on-chain fee configuration or actual creator/platform transfers.
+model CreatorFeeSettlement {
+  id                String   @id @default(cuid())
+  txSignature       String   @unique
+  tokenMint         String
+  creatorWallet     String
+  platformWallet    String
+  totalObservedLamports BigInt
+  creatorLamports   BigInt
+  platformLamports  BigInt
+  status            String   @default("OBSERVED") // OBSERVED | CONFIRMED | RECONCILED | DISPUTED
+  slot              BigInt?
+  blockTime         DateTime?
+  observedAt        DateTime @default(now())
+  confirmedAt       DateTime?
+  reconciledAt      DateTime?
 }

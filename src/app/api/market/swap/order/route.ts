@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PublicKey } from "@solana/web3.js";
 import { marketProxyRateLimit } from "@/lib/server/market-proxy-rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,8 +11,14 @@ export const revalidate = 0;
 const VALID_AMOUNT = /^[1-9][0-9]{0,39}$/;
 
 export async function GET(request: NextRequest) {
-  if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" || process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true") {
+  if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" ||
+      process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true" ||
+      process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED !== "true") {
     return NextResponse.json({ error: "Live trading is disabled for this deployment." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Sign in before requesting a swap order." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
   const rate = marketProxyRateLimit(request, "jupiter-order", 30);
   if (!rate.allowed) {
@@ -30,6 +39,13 @@ export async function GET(request: NextRequest) {
     new PublicKey(taker);
   } catch {
     return NextResponse.json({ error: "Invalid input mint, output mint, or wallet address." }, { status: 400 });
+  }
+  const ownedWallet = await db.wallet.findFirst({
+    where: { address: taker, userId: session.user.id, verified: true, provider: { in: ["Phantom", "Solflare"] } },
+    select: { id: true },
+  }).catch(() => null);
+  if (!ownedWallet) {
+    return NextResponse.json({ error: "The taker wallet must be linked to your account and verified before requesting a swap." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   }
   if (inputMint === outputMint) {
     return NextResponse.json({ error: "Input and output token must be different." }, { status: 400 });
