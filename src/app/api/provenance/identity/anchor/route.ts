@@ -52,8 +52,9 @@ export async function POST(request: NextRequest) {
 
     const message = tx.transaction.message;
     const accountKeys = message.accountKeys.map((key) => key.toBase58());
-    if (!accountKeys.includes(identity.walletAddress)) {
-      return NextResponse.json({ anchored: false, error: "Anchor transaction was not signed by the registered wallet." }, { status: 422 });
+    const walletSignerIndex = accountKeys.indexOf(identity.walletAddress);
+    if (walletSignerIndex < 0 || walletSignerIndex >= message.header.numRequiredSignatures) {
+      return NextResponse.json({ anchored: false, error: "Registered wallet is not a transaction signer." }, { status: 422 });
     }
 
     const memoFound = message.instructions.some((instruction) => {
