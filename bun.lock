@@ -11,7 +11,8 @@
         "@hookform/resolvers": "^5.1.1",
         "@mdxeditor/editor": "^3.39.1",
         "@prisma/client": "^6.11.1",
-        "@pump-fun/pump-sdk": "^4.0.0",
+        "@pump-fun/pump-sdk": "4.1.0",
+        "@pump-fun/pump-swap-sdk": "2.1.0",
         "@radix-ui/react-accordion": "^1.2.11",
         "@radix-ui/react-alert-dialog": "^1.1.14",
         "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -499,9 +500,9 @@
 
     "@pump-fun/agent-payments-sdk": ["@pump-fun/agent-payments-sdk@1.0.7", "", { "dependencies": { "@coral-xyz/anchor": "^0.31.1", "@solana/spl-token": "^0.4.9", "@solana/web3.js": "^1.98.0" }, "optionalDependencies": { "@rollup/rollup-linux-x64-gnu": "*" } }, "sha512-RnYh3GDMTaLvrmu9Hz4W11ulRNQYhrQoOOJyhpMa/wMRuY7ibhoQczcA17R3Zy3fKyhveiLmYI+GKF4pnp2nVg=="],
 
-    "@pump-fun/pump-sdk": ["@pump-fun/pump-sdk@4.0.0", "", { "dependencies": { "@coral-xyz/anchor": "^0.31.1", "@pump-fun/agent-payments-sdk": "1.0.7", "@pump-fun/pump-swap-sdk": "^1.13.0", "@solana/spl-token": "^0.4.13", "@solana/web3.js": "^1.98.2", "bn.js": "^5.2.2", "undici-types": "^6.20.0" } }, "sha512-LxFS0Y9bdFfgw3mTqqWg+w/HMna/3zOXm0HdLdBzui1L0htfNLHZy5EhLyod6OMpl2nSjQb2MTeTlzyxWXZwHw=="],
+    "@pump-fun/pump-sdk": ["@pump-fun/pump-sdk@4.1.0", "", { "dependencies": { "@coral-xyz/anchor": "^0.31.1", "@pump-fun/agent-payments-sdk": "1.0.7", "@pump-fun/pump-swap-sdk": "^2.1.0", "@solana/spl-token": "^0.4.13", "@solana/web3.js": "^1.98.2", "bn.js": "^5.2.2", "undici-types": "^6.20.0" } }],
 
-    "@pump-fun/pump-swap-sdk": ["@pump-fun/pump-swap-sdk@1.20.0", "", { "dependencies": { "@coral-xyz/anchor": "^0.31.1", "@solana/spl-token": "^0.4.9", "@solana/web3.js": "^1.98.2", "bn.js": "^5.2.2", "bs58": "^6.0.0" } }, "sha512-DuBZ5ge3OJPao6m0aZZj+GTZFzfZ/TU3ca1EgL9ejr+8QIYETlLQVMaiznS+U4uGzM9z58mpxoXn3HuVEYHCFw=="],
+    "@pump-fun/pump-swap-sdk": ["@pump-fun/pump-swap-sdk@2.1.0", "", { "dependencies": { "@coral-xyz/anchor": "^0.31.1", "@solana/spl-token": "^0.4.9", "@solana/web3.js": "^1.98.2", "bn.js": "^5.2.2", "bs58": "^6.0.0" } }],
 
     "@radix-ui/colors": ["@radix-ui/colors@3.0.0", "https://registry.npmjs.com/@radix-ui/colors/-/colors-3.0.0.tgz", {}, "sha512-FUOsGBkHrYJwCSEtWRCIfQbZG7q1e6DgxCIOe1SUQzDe/7rXXeA47s8yCn6fuTNQAj1Zq4oTFi9Yjp3wzElcxg=="],
 
