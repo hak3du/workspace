@@ -74,33 +74,78 @@ function extractCandles(payload: Record<string, unknown>): Candle[] {
  * market pair but are not present in PQC's own launch database.
  */
 async function geckoFallback(mint: string, range: string): Promise<{ candles: Candle[]; pairAddress: string; tokenSide: "base" | "quote" }> {
-  const dexResponse = await fetch("https://api.dexscreener.com/latest/dex/tokens/" + encodeURIComponent(mint), {
-    cache: "no-store",
-    signal: AbortSignal.timeout(8_000),
-  });
-  if (!dexResponse.ok) throw new Error("DexScreener pair lookup failed.");
-  const dexPayload = await dexResponse.json() as {
-    pairs?: Array<{
-      chainId?: string;
-      pairAddress?: string;
-      baseToken?: { address?: string };
-      quoteToken?: { address?: string };
-      liquidity?: { usd?: number };
-    }>;
+  // PQC Market resolves the actual GeckoTerminal pool and charts that pool.
+  // Do the same here: a DexScreener pairAddress is not guaranteed to be a
+  // GeckoTerminal pool address, which caused valid tokens to return blank charts.
+  type GeckoPool = {
+    id?: string;
+    attributes?: {
+      address?: string;
+      reserve_in_usd?: string | number;
+      base_token_address?: string;
+      quote_token_address?: string;
+    };
   };
-  // A requested token can be either side of a pool. GeckoTerminal can return
-  // OHLCV denominated in USD for either side; never chart the other token by mistake.
-  const pair = (dexPayload.pairs || [])
-    .filter((item) => item.chainId === "solana" && item.pairAddress &&
-      (item.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
-       item.quoteToken?.address?.toLowerCase() === mint.toLowerCase()))
-    .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
-  if (!pair?.pairAddress) return { candles: [], pairAddress: "", tokenSide: "base" };
 
-  const tokenSide = pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ? "base" : "quote";
+  let poolAddress = "";
+  let tokenSide: "base" | "quote" = "base";
+  try {
+    const poolsResponse = await fetch(
+      "https://api.geckoterminal.com/api/v2/networks/solana/tokens/" +
+        encodeURIComponent(mint) + "/pools?page=1",
+      { headers: { accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(8_000) },
+    );
+    if (poolsResponse.ok) {
+      const payload = await poolsResponse.json() as { data?: GeckoPool[] };
+      const candidates = (payload.data || [])
+        .filter((pool) => {
+          const base = pool.attributes?.base_token_address?.toLowerCase();
+          const quote = pool.attributes?.quote_token_address?.toLowerCase();
+          return Boolean(pool.attributes?.address || pool.id) &&
+            (base === mint.toLowerCase() || quote === mint.toLowerCase());
+        })
+        .sort((a, b) =>
+          Number(b.attributes?.reserve_in_usd || 0) - Number(a.attributes?.reserve_in_usd || 0),
+        );
+      const pool = candidates[0];
+      if (pool) {
+        poolAddress = pool.attributes?.address || pool.id?.replace(/^solana_/, "") || "";
+        tokenSide = pool.attributes?.base_token_address?.toLowerCase() === mint.toLowerCase() ? "base" : "quote";
+      }
+    }
+  } catch {
+    // Continue to the market-pair lookup; a provider outage should not abort chart recovery.
+  }
+
+  // Compatibility fallback if the token-pools endpoint did not return a usable pool.
+  if (!poolAddress) {
+    const dexResponse = await fetch("https://api.dexscreener.com/latest/dex/tokens/" + encodeURIComponent(mint), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!dexResponse.ok) throw new Error("DexScreener pair lookup failed.");
+    const dexPayload = await dexResponse.json() as {
+      pairs?: Array<{
+        chainId?: string;
+        pairAddress?: string;
+        baseToken?: { address?: string };
+        quoteToken?: { address?: string };
+        liquidity?: { usd?: number };
+      }>;
+    };
+    const pair = (dexPayload.pairs || [])
+      .filter((item) => item.chainId === "solana" && item.pairAddress &&
+        (item.baseToken?.address?.toLowerCase() === mint.toLowerCase() ||
+         item.quoteToken?.address?.toLowerCase() === mint.toLowerCase()))
+      .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+    if (!pair?.pairAddress) return { candles: [], pairAddress: "", tokenSide: "base" };
+    poolAddress = pair.pairAddress;
+    tokenSide = pair.baseToken?.address?.toLowerCase() === mint.toLowerCase() ? "base" : "quote";
+  }
+
   const tf = GECKO_RANGES[range];
   const url = "https://api.geckoterminal.com/api/v2/networks/solana/pools/" +
-    encodeURIComponent(pair.pairAddress) + "/ohlcv/" + tf.unit +
+    encodeURIComponent(poolAddress) + "/ohlcv/" + tf.unit +
     "?aggregate=" + tf.aggregate + "&limit=" + tf.limit + "&currency=usd&token=" + tokenSide;
   const response = await fetch(url, {
     headers: { accept: "application/json" },
@@ -109,12 +154,11 @@ async function geckoFallback(mint: string, range: string): Promise<{ candles: Ca
   });
   if (!response.ok) throw new Error("GeckoTerminal OHLCV request failed (" + response.status + ").");
   const payload = await response.json() as { data?: { attributes?: { ohlcv_list?: number[][] } } };
-  // GeckoTerminal returns newest first; the chart consumes oldest first.
   const candles = (payload.data?.attributes?.ohlcv_list || [])
     .map(([t, o, h, l, c, v]) => ({ t, o, h, l, c, v }))
     .filter((item) => [item.t, item.o, item.h, item.l, item.c, item.v].every(Number.isFinite))
     .reverse();
-  return { candles, pairAddress: pair.pairAddress, tokenSide };
+  return { candles, pairAddress: poolAddress, tokenSide };
 }
 
 type BirdeyeCandle = { unix_time: number; o: number; h: number; l: number; c: number; v_usd: number };
