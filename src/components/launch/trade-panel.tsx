@@ -293,19 +293,30 @@ export function TradePanel({
       amount: amountRaw,
     });
     if (expectedSol.lte(new BN(0))) throw new Error("Pump SDK returned no expected SOL output; no transaction was sent.");
-    const instructions = await PUMP_SDK.sellInstructions({
-      global,
-      bondingCurveAccountInfo: sellState.bondingCurveAccountInfo,
-      bondingCurve: sellState.bondingCurve,
-      mint,
-      user: publicKey,
-      amount: amountRaw,
-      solAmount: expectedSol,
-      slippage: PUMP_SLIPPAGE_PERCENT,
-      tokenProgram,
-      mayhemMode: sellState.bondingCurve.isMayhemMode ?? false,
-      cashback: sellState.bondingCurve.isCashbackCoin ?? false,
-    });
+    const instructions = sellState.bondingCurve.isCashbackCoin
+      ? await PUMP_SDK.sellInstructions({
+          global,
+          bondingCurveAccountInfo: sellState.bondingCurveAccountInfo,
+          bondingCurve: sellState.bondingCurve,
+          mint,
+          user: publicKey,
+          amount: amountRaw,
+          solAmount: expectedSol,
+          slippage: PUMP_SLIPPAGE_PERCENT,
+          tokenProgram,
+          mayhemMode: sellState.bondingCurve.isMayhemMode ?? false,
+          cashback: true,
+        })
+      : await PUMP_SDK.sellV3Instructions({
+          bondingCurve: sellState.bondingCurve,
+          mint,
+          user: publicKey,
+          amount: amountRaw,
+          quoteAmount: expectedSol,
+          slippage: PUMP_SLIPPAGE_PERCENT,
+          quoteTokenProgram: sellState.quoteTokenProgram,
+          tokenProgram,
+        });
     return await sendAndConfirm(instructions);
   }
 
