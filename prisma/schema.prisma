@@ -31,6 +31,7 @@ model User {
   reactions    Reaction[]
   apiKeys      ApiKey[]
   wallets      Wallet[]
+  walletChallenges WalletChallenge[]
   notifications Notification[]
   pqIdentity    PqIdentity?
 }
@@ -39,10 +40,23 @@ model Wallet {
   id        String   @id @default(cuid())
   userId    String
   address   String   @unique
-  provider  String   @default("Simulated Phantom") // Phantom | Solflare (simulated)
-  verified  Boolean  @default(true)
+  provider  String   @default("Unverified") // Display label only; ownership requires signed challenge
+  verified  Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model WalletChallenge {
+  id        String   @id @default(cuid())
+  userId    String
+  address   String
+  nonce     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, address])
 }
 
 model Space {
