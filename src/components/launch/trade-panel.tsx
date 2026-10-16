@@ -384,7 +384,7 @@ export function TradePanel({
         <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Trade {token.symbol}</h3>
         <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5 text-center">
           <Wallet className="mx-auto size-6 text-violet-300" />
-          <p className="text-sm text-muted-foreground">Connect Phantom to trade. Live Pump swaps are available on mainnet for supported SOL-quoted bonding curves.</p>
+          <p className="text-sm text-muted-foreground">Connect Phantom to trade. Live trading remains disabled until mainnet transaction validation is explicitly approved.</p>
           <WalletMultiButton className="!h-11 !w-full !justify-center !rounded-lg" />
         </div>
       </div>
@@ -418,11 +418,11 @@ export function TradePanel({
           </div>
           <Input type="number" inputMode="decimal" min={0.01} max={100} step={0.01} value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Amount in SOL (0.01–100)" aria-label="Amount in SOL to buy" />
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
-            <span className="text-xs text-muted-foreground">Preview estimate · not executable</span>
+            <span className="text-xs text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "Estimated tokens out" : "Preview estimate · not executable"}</span>
             <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? compact(Number(buyQuote.tokensOut) / 10 ** walletTokenDecimals) + " " + token.symbol : "—") : (demoBuyOut > 0 ? compact(demoBuyOut) + " " + token.symbol : "—")}</span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Indicative price impact · preview only</span>
+            <span>{REAL_PUMP_TRADING_ENABLED ? "Effective price impact (fees included)" : "Indicative price impact · preview only"}</span>
             <span>{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? "~" + buyQuote.impactPct.toFixed(2) + "%" : "—") : (demoBuyOut > 0 ? "~" + (((demoEffectiveSol / demoBuyOut / demoSpot) - 1) * 100).toFixed(2) + "%" : "—")}</span>
           </div>
         </TabsContent>
