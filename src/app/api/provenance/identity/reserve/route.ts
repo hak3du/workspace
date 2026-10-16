@@ -84,6 +84,30 @@ export async function POST(request: NextRequest) {
     if (!identity || identity.status !== "ACTIVE") {
       return NextResponse.json({ error: "Register an active wallet-bound PQ identity first." }, { status: 409 });
     }
+    const canonicalFields = { mint, creator: identity.walletAddress, name: name.trim(), symbol: symbol.trim(), image };
+    const existingReservation = await db.pqLeafUse.findUnique({ where: { mint } });
+    if (existingReservation) {
+      const existingFields = JSON.parse(existingReservation.canonicalJson) as typeof canonicalFields;
+      const sameFields = existingReservation.identityId === identity.id &&
+        JSON.stringify(existingFields) === JSON.stringify(canonicalFields);
+      if (!sameFields) {
+        return NextResponse.json({ error: "This mint already has a different attestation reservation. Do not reuse its one-time leaf." }, { status: 409 });
+      }
+      return NextResponse.json({
+        reserved: true,
+        idempotent: true,
+        reservationId: existingReservation.id,
+        mint,
+        leaf: existingReservation.leaf,
+        messageDigest: existingReservation.messageDigest,
+        publicKey: { root: identity.root, pubSeed: identity.pubSeed, height: identity.height },
+        creator: identity.walletAddress,
+        canonicalFields,
+        status: existingReservation.status,
+        note: "This is the existing reservation; its one-time leaf must never be reused for another message.",
+      }, { headers: { "Cache-Control": "no-store" } });
+    }
+
     const used = new Set(identity.leaves.map((entry) => entry.leaf));
     let leaf = -1;
     for (let candidate = 0; candidate < 1 << identity.height; candidate++) {
@@ -93,14 +117,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This PQ identity has exhausted its one-time signing leaves. Rotate the identity through a reviewed recovery flow." }, { status: 409 });
     }
 
-    const digest = launchDigest({
-      mint,
-      creator: identity.walletAddress,
-      name: name.trim(),
-      symbol: symbol.trim(),
-      image,
-      leaf,
-    });
+    const digest = launchDigest({ ...canonicalFields, leaf });
     const messageDigest = Buffer.from(digest).toString("hex");
     const reservation = await db.pqLeafUse.create({
       data: {
@@ -108,6 +125,7 @@ export async function POST(request: NextRequest) {
         leaf,
         messageDigest,
         mint,
+        canonicalJson: JSON.stringify(canonicalFields),
         status: "RESERVED",
       },
     });
@@ -119,7 +137,7 @@ export async function POST(request: NextRequest) {
       messageDigest,
       publicKey: { root: identity.root, pubSeed: identity.pubSeed, height: identity.height },
       creator: identity.walletAddress,
-      canonicalFields: { mint, creator: identity.walletAddress, name: name.trim(), symbol: symbol.trim(), image },
+      canonicalFields,
       note: "This leaf is permanently consumed by reservation. Never reuse it, including after client failure.",
     }, { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch {
