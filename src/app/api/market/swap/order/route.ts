@@ -8,6 +8,9 @@ export const revalidate = 0;
 const VALID_AMOUNT = /^[1-9][0-9]{0,39}$/;
 
 export async function GET(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" || process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true") {
+    return NextResponse.json({ error: "Live trading is disabled for this deployment." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
   const rate = marketProxyRateLimit(request, "jupiter-order", 30);
   if (!rate.allowed) {
     return NextResponse.json({ error: "Too many swap quotes requested. Wait briefly and retry." }, {
