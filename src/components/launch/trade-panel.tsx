@@ -221,51 +221,63 @@ export function TradePanel({
 
     if (side === "BUY") {
       if (!Number.isFinite(amt) || amt < 0.01 || amt > 100) throw new Error("Buy between 0.01 and 100 SOL.");
-      const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
-      // Keep the SDK's slippage-adjusted maximum cost within the entered SOL budget.
-      const quoteSolAmount = solAmount.muln(100).divn(100 + PUMP_SLIPPAGE_PERCENT);
+      const quoteSolAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
       const [buyState, global, feeConfig] = await Promise.all([
         sdk.fetchBuyState(mint, publicKey, tokenProgram),
         sdk.fetchGlobal(),
         sdk.fetchFeeConfig(),
       ]);
-      const tokenAmount = getBuyTokenAmountFromSolAmount({
-        global,
-        feeConfig,
-        mintSupply: buyState.bondingCurve.tokenTotalSupply,
-        bondingCurve: buyState.bondingCurve,
-        amount: quoteSolAmount,
-        quoteMint: PublicKey.default,
-      });
+      const tokenAmount = buyState.bondingCurve.isCashbackCoin
+        ? getBuyTokenAmountFromSolAmount({
+            global,
+            feeConfig,
+            mintSupply: buyState.bondingCurve.tokenTotalSupply,
+            bondingCurve: buyState.bondingCurve,
+            amount: quoteSolAmount,
+            quoteMint: PublicKey.default,
+          })
+        : getBuyV3TokenAmountFromQuoteAmount({
+            global,
+            feeConfig,
+            mintSupply: buyState.bondingCurve.tokenTotalSupply,
+            bondingCurve: buyState.bondingCurve,
+            amount: quoteSolAmount,
+            curveBaseTokenBalance: buyState.curveBaseTokenBalance,
+          });
       if (tokenAmount.lte(new BN(0))) {
         throw new Error("Pump SDK returned no expected token output; no transaction was sent.");
       }
-      // Convert the requested SOL budget into the precise curve cost for this token amount.
-      // This avoids treating the input budget as the exact execution cost after curve rounding.
-      const maxCost = getBuySolAmountFromTokenAmount({
-        global,
-        feeConfig,
-        mintSupply: buyState.bondingCurve.tokenTotalSupply,
-        bondingCurve: buyState.bondingCurve,
-        amount: tokenAmount,
-        quoteMint: PublicKey.default,
-      });
-      const maxCostWithSlippage = maxCost.muln(100 + PUMP_SLIPPAGE_PERCENT).addn(99).divn(100);
-      if (maxCost.lte(new BN(0)) || maxCostWithSlippage.gt(solAmount)) {
-        throw new Error("Pump SDK quote exceeds the entered SOL budget after slippage; no transaction was sent.");
-      }
-      const instructions = await PUMP_SDK.buyInstructions({
-        global,
-        bondingCurveAccountInfo: buyState.bondingCurveAccountInfo,
-        bondingCurve: buyState.bondingCurve,
-        associatedUserAccountInfo: buyState.associatedUserAccountInfo,
-        mint,
-        user: publicKey,
-        amount: tokenAmount,
-        solAmount: maxCost,
-        slippage: PUMP_SLIPPAGE_PERCENT,
-        tokenProgram,
-      });
+      const instructions = buyState.bondingCurve.isCashbackCoin
+        ? await PUMP_SDK.buyInstructions({
+            global,
+            bondingCurveAccountInfo: buyState.bondingCurveAccountInfo,
+            bondingCurve: buyState.bondingCurve,
+            associatedUserAccountInfo: buyState.associatedUserAccountInfo,
+            mint,
+            user: publicKey,
+            amount: tokenAmount,
+            solAmount: getBuySolAmountFromTokenAmount({
+              global,
+              feeConfig,
+              mintSupply: buyState.bondingCurve.tokenTotalSupply,
+              bondingCurve: buyState.bondingCurve,
+              amount: tokenAmount,
+              quoteMint: PublicKey.default,
+            }),
+            slippage: PUMP_SLIPPAGE_PERCENT,
+            tokenProgram,
+          })
+        : await PUMP_SDK.buyExactQuoteInV3Instructions({
+            bondingCurve: buyState.bondingCurve,
+            associatedUserAccountInfo: buyState.associatedUserAccountInfo,
+            mint,
+            user: publicKey,
+            quoteAmount: quoteSolAmount,
+            amount: tokenAmount,
+            slippage: PUMP_SLIPPAGE_PERCENT,
+            quoteTokenProgram: buyState.quoteTokenProgram,
+            tokenProgram,
+          });
       return await sendAndConfirm(instructions);
     }
 
