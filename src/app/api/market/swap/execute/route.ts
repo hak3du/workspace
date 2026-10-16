@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { marketProxyRateLimit } from "@/lib/server/market-proxy-rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,6 +11,10 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true" ||
       process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED !== "true") {
     return NextResponse.json({ error: "Live trading is disabled for this deployment." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Sign in before submitting a swap transaction." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
   const rate = marketProxyRateLimit(request, "jupiter-execute", 10);
   if (!rate.allowed) {
