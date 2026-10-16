@@ -400,7 +400,7 @@ export function TradePanel({
   }
 
   const liveBlocked = REAL_PUMP_TRADING_ENABLED && (
-    !mint || (side === "BUY" && (quoteLoading || !buyQuote || Boolean(quoteError))) ||
+    !mint || (side === "BUY" && (quoteLoading || (!graduated && (!buyQuote || Boolean(quoteError))))) ||
     (side === "SELL" && walletTokenAmount <= 0)
   );
 
@@ -408,7 +408,9 @@ export function TradePanel({
     <div className="glass rounded-2xl p-4">
       <div className={"mb-3 rounded-lg border p-3 text-xs " + (REAL_PUMP_TRADING_ENABLED ? "border-amber-400/30 bg-amber-400/5 text-amber-100" : "border-white/10 bg-white/[0.03] text-muted-foreground")}>
         {REAL_PUMP_TRADING_ENABLED
-          ? "LIVE Pump.fun trading · 5% slippage tolerance · SOL budget includes the slippage reserve. Inspect the wallet transaction before signing. Bonding-curve tokens only in this slice."
+          ? (graduated
+              ? "LIVE PumpSwap trading · graduated token · 5% slippage tolerance. Quote preview is unavailable here; inspect the wallet transaction before signing."
+              : "LIVE Pump.fun trading · 5% slippage tolerance. SOL budget is the maximum input. Inspect the wallet transaction before signing.")
           : "DEMO ONLY · simulated buys and sells · no SOL or tokens move."}
         {quoteLoading ? " Fetching live quote…" : quoteError ? " " + quoteError : ""}
       </div>
