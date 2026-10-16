@@ -251,14 +251,27 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6">
-        <button onClick={() => navigate({ name: "discover" })} className="flex items-center gap-2.5 focus:outline-none" aria-label="Quantum Leap home">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white shadow-[0_0_18px_rgba(139,92,246,0.5)]">
-            <Sparkles className="h-5 w-5" />
-          </span>
-          <span className="hidden text-lg font-extrabold tracking-tight sm:block">
+        <motion.button
+          type="button"
+          onClick={() => navigate({ name: "discover" })}
+          whileHover={{ scale: 1.035 }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ type: "spring", stiffness: 420, damping: 24 }}
+          className="group flex items-center gap-2.5 rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="Quantum Leap home — return to Discover"
+          title="Back to Discover"
+        >
+          <motion.span
+            whileHover={{ rotate: 8, boxShadow: "0 0 28px rgba(34,211,238,0.45)" }}
+            transition={{ type: "spring", stiffness: 360, damping: 18 }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-400 text-white shadow-[0_0_18px_rgba(139,92,246,0.5)] transition-shadow group-hover:shadow-[0_0_26px_rgba(139,92,246,0.7)]"
+          >
+            <Sparkles className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+          </motion.span>
+          <span className="hidden text-lg font-extrabold tracking-tight transition-opacity group-hover:opacity-90 sm:block">
             QUANTUM<span className="text-gradient"> LEAP</span>
           </span>
-        </button>
+        </motion.button>
 
         <button
           onClick={() => setSearchOpen(true)}
