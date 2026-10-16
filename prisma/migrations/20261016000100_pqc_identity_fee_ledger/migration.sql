@@ -1,5 +1,36 @@
 -- Durable state for PQC identity registration, one-time leaf allocation,
 -- and exact-lamport fee reconciliation. Apply only after configuring the target DB.
+-- Replace simulated/implicitly-trusted wallet rows with explicitly unverified rows.
+PRAGMA foreign_keys=OFF;
+BEGIN;
+ALTER TABLE "Wallet" RENAME TO "Wallet_old";
+CREATE TABLE "Wallet" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "address" TEXT NOT NULL,
+  "provider" TEXT NOT NULL DEFAULT 'Unverified',
+  "verified" BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Wallet_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+INSERT INTO "Wallet" ("id", "userId", "address", "provider", "verified", "createdAt")
+SELECT "id", "userId", "address", 'Unverified', 0, "createdAt" FROM "Wallet_old";
+DROP TABLE "Wallet_old";
+CREATE UNIQUE INDEX "Wallet_address_key" ON "Wallet"("address");
+
+CREATE TABLE "WalletChallenge" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "address" TEXT NOT NULL,
+  "nonce" TEXT NOT NULL,
+  "expiresAt" DATETIME NOT NULL,
+  "usedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "WalletChallenge_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX "WalletChallenge_nonce_key" ON "WalletChallenge"("nonce");
+CREATE INDEX "WalletChallenge_userId_address_idx" ON "WalletChallenge"("userId", "address");
+
 CREATE TABLE "PqIdentity" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "userId" TEXT NOT NULL,
@@ -56,3 +87,6 @@ CREATE TABLE "CreatorFeeSettlement" (
 );
 
 CREATE UNIQUE INDEX "CreatorFeeSettlement_txSignature_key" ON "CreatorFeeSettlement"("txSignature");
+
+COMMIT;
+PRAGMA foreign_keys=ON;
