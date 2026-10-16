@@ -5,6 +5,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" || process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true") {
+    return NextResponse.json({ error: "Live trading is disabled for this deployment." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
   const rate = marketProxyRateLimit(request, "jupiter-execute", 10);
   if (!rate.allowed) {
     return NextResponse.json({ error: "Too many swap executions requested. Check prior signatures before retrying." }, {
