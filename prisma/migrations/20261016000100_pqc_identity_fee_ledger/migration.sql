@@ -26,6 +26,7 @@ CREATE TABLE "PqLeafUse" (
   "messageDigest" TEXT NOT NULL,
   "mint" TEXT NOT NULL,
   "canonicalJson" TEXT NOT NULL,
+  "signatureJson" TEXT,
   "status" TEXT NOT NULL DEFAULT 'RESERVED',
   "reservedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "signedAt" DATETIME,
