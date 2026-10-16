@@ -36,3 +36,13 @@ The client must build and wallet-sign that memo transaction; the server does not
 ## Migration and runtime warning
 
 Apply `prisma/migrations/20261016000100_pqc_identity_fee_ledger/migration.sql` only after backing up the target database and confirming it is SQLite. The migration is not a substitute for a serverless-safe production database adapter. Until Turso/libSQL or another hosted database is configured and tested, the identity/leaf/fee-ledger routes must not be treated as production-ready.
+
+
+## Solana wallet ownership verification
+
+- `POST /api/wallet/verify/challenge` creates a random, expiring, account-bound message.
+- The client asks the selected wallet to sign that exact message with `signMessage`; it must not request a transaction signature for this challenge.
+- `POST /api/wallet/verify/confirm` verifies the Ed25519 signature against the submitted public key and atomically consumes the nonce before setting `Wallet.verified=true`.
+- The migration resets previously simulated wallet records to `verified=false`; old simulated rows must not be trusted as ownership proof.
+- The `provider` value is only a display label. The cryptographic signature—not the client-provided provider name—establishes wallet ownership.
+- This flow still depends on the WalletChallenge and Wallet schema migration being applied successfully to the actual database.
