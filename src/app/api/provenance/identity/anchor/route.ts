@@ -62,8 +62,20 @@ export async function POST(request: NextRequest) {
 
     // Legacy messages expose `instructions`; v0 messages expose `compiledInstructions`.
     // Both arrays contain compiled instructions whose data is base58 encoded.
+    // Normalize the legacy and v0 message shapes without relying on the
+    // SDK union's "in" narrowing (which resolves the legacy branch to never).
+    const instructionShape = message as unknown as {
+      compiledInstructions?: Array<{ programIdIndex: number; data: string }>;
+      instructions?: Array<{ programIdIndex: number; data: string }>;
+    };
     const compiledInstructions =
-      "compiledInstructions" in message ? message.compiledInstructions : message.instructions;
+      instructionShape.compiledInstructions ?? instructionShape.instructions;
+    if (!compiledInstructions) {
+      return NextResponse.json(
+        { anchored: false, error: "Transaction message has no compiled instructions." },
+        { status: 422 },
+      );
+    }
     const memoFound = compiledInstructions.some((instruction) => {
       const programId = accountKeys[instruction.programIdIndex];
       if (programId !== MEMO_PROGRAM) return false;
