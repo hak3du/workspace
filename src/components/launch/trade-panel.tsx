@@ -14,7 +14,7 @@ import { post } from "@/lib/api";
 import { solOut, spotPrice, tokensOut } from "@/lib/bonding";
 import { compact, sol } from "@/lib/format";
 import type { TokenDTO, TradeDTO } from "@/lib/types";
-import { OnlinePumpSdk, PUMP_SDK, getBuyTokenAmountFromSolAmount, getBuySolAmountFromTokenAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
+import { OnlinePumpSdk, PUMP_SDK, getBuyTokenAmountFromSolAmount, getBuyV3TokenAmountFromQuoteAmount, getBuySolAmountFromTokenAmount, getSellSolAmountFromTokenAmount } from "@pump-fun/pump-sdk";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -141,19 +141,24 @@ export function TradePanel({
           sdk.fetchGlobal(),
           sdk.fetchFeeConfig(),
         ]);
-        const solAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
-        // Reserve enough of the entered SOL budget for the SDK's slippage allowance.
-        // buyInstructions applies slippage to max cost, so quoting against the full
-        // budget could otherwise permit a maximum spend above the user's input.
-        const quoteSolAmount = solAmount.muln(100).divn(100 + PUMP_SLIPPAGE_PERCENT);
-        const tokensOut = getBuyTokenAmountFromSolAmount({
-          global,
-          feeConfig,
-          mintSupply: buyState.bondingCurve.tokenTotalSupply,
-          bondingCurve: buyState.bondingCurve,
-          amount: quoteSolAmount,
-          quoteMint: PublicKey.default,
-        });
+        const quoteSolAmount = new BN(Math.round(amt * LAMPORTS_PER_SOL));
+        const tokensOut = buyState.bondingCurve.isCashbackCoin
+          ? getBuyTokenAmountFromSolAmount({
+              global,
+              feeConfig,
+              mintSupply: buyState.bondingCurve.tokenTotalSupply,
+              bondingCurve: buyState.bondingCurve,
+              amount: quoteSolAmount,
+              quoteMint: PublicKey.default,
+            })
+          : getBuyV3TokenAmountFromQuoteAmount({
+              global,
+              feeConfig,
+              mintSupply: buyState.bondingCurve.tokenTotalSupply,
+              bondingCurve: buyState.bondingCurve,
+              amount: quoteSolAmount,
+              curveBaseTokenBalance: buyState.curveBaseTokenBalance,
+            });
         if (tokensOut.lte(new BN(0))) throw new Error("Pump SDK returned a zero-token quote.");
         const spot = Number(buyState.bondingCurve.virtualQuoteReserves.toString()) /
           Number(buyState.bondingCurve.virtualTokenReserves.toString());
