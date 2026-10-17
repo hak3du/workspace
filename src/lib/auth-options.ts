@@ -28,7 +28,9 @@ export const authOptions: NextAuthOptions = {
         const providerId = String(profile.id);
         if (!/^[0-9]{1,20}$/.test(providerId)) return token;
         const handle = "@github_" + providerId;
-        const login = typeof profile.login === "string" ? profile.login : handle.slice(1);
+        const login = "login" in profile && typeof profile.login === "string"
+          ? profile.login
+          : handle.slice(1);
         const displayName = typeof profile.name === "string" && profile.name.trim()
           ? profile.name.trim().slice(0, 80)
           : login.slice(0, 80);
