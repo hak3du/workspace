@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { marketProxyRateLimit } from "@/lib/server/market-proxy-rate-limit";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
+import { isPumpFunAdapterReady } from "@/lib/marketplace/config";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  if (process.env.AHE_PUMP_ADAPTER_READY !== "true" ||
+  if (!isPumpFunAdapterReady() ||
       process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" ||
       process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true" ||
       process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED !== "true") {
