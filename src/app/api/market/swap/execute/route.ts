@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" ||
+  if (process.env.AHE_PUMP_ADAPTER_READY !== "true" ||
+      process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" ||
       process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true" ||
       process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED !== "true") {
     return NextResponse.json({ error: "Live trading is disabled for this deployment." }, { status: 503, headers: { "Cache-Control": "no-store" } });
