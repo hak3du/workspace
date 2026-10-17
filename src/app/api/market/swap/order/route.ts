@@ -4,6 +4,7 @@ import { marketProxyRateLimit } from "@/lib/server/market-proxy-rate-limit";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/lib/db";
+import { isPumpFunAdapterReady } from "@/lib/marketplace/config";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +12,8 @@ export const revalidate = 0;
 const VALID_AMOUNT = /^[1-9][0-9]{0,39}$/;
 
 export async function GET(request: NextRequest) {
-  if (process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" ||
+  if (!isPumpFunAdapterReady() ||
+      process.env.NEXT_PUBLIC_SOLANA_CLUSTER !== "mainnet-beta" ||
       process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING !== "true" ||
       process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED !== "true") {
     return NextResponse.json({ error: "Live trading is disabled for this deployment." }, { status: 503, headers: { "Cache-Control": "no-store" } });
