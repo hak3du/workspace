@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         label,
         prefix,
         keyHash: hash,
-        fullKeyOnce: fullKey, // stored for audit; never returned in lists
+        fullKeyOnce: null,
         environment,
         plan,
         quota: QUOTA_BY_PLAN[plan],
