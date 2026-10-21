@@ -52,9 +52,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@reactuses/core": "^6.0.5",
-    "@solana/wallet-adapter-phantom": "^0.9.30",
     "@solana/wallet-adapter-react": "^0.15.40",
-    "@solana/wallet-adapter-react-ui": "^0.9.40",
     "@solana/web3.js": "^1.99.0",
     "@tanstack/react-query": "^5.82.0",
     "@tanstack/react-table": "^8.21.3",
@@ -87,7 +85,9 @@
     "vaul": "^1.1.2",
     "z-ai-web-dev-sdk": "^0.0.18",
     "zod": "^4.0.2",
-    "zustand": "^5.0.6"
+    "zustand": "^5.0.6",
+    "@reown/appkit": "1.8.24",
+    "@reown/appkit-adapter-solana": "1.8.24"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import BN from "bn.js";
 import { Loader2, Wallet } from "lucide-react";
 import { PublicKey, Transaction, LAMPORTS_PER_SOL, type TransactionInstruction } from "@solana/web3.js";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,14 @@ const SELL_PRESETS = [25, 50, 75, 100];
 // Public environment flags are necessary but not sufficient. The server readiness
 // endpoint is authoritative; unavailable or malformed readiness always fails closed.
 const TOKEN_DECIMALS_FALLBACK = 6;
+
+type ReownSolanaProvider = {
+  sendTransaction?: (
+    transaction: Transaction,
+    connection: import("@solana/web3.js").Connection,
+    options?: { preflightCommitment?: "processed" | "confirmed" | "finalized" }
+  ) => Promise<string>;
+};
 const PUMP_SLIPPAGE_PERCENT = 5;
 
 interface TradeResponse {
@@ -43,7 +51,14 @@ export function TradePanel({
 }) {
   const { toast } = useToast();
   const { connection } = useConnection();
-  const { connected, publicKey, sendTransaction } = useWallet();
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount({ namespace: "solana" });
+  const { walletProvider } = useAppKitProvider<ReownSolanaProvider>("solana");
+  const connected = Boolean(isConnected && address);
+  const publicKey = useMemo(() => {
+    try { return address ? new PublicKey(address) : null; } catch { return null; }
+  }, [address]);
+  const sendTransaction = walletProvider?.sendTransaction?.bind(walletProvider);
   const sdk = useMemo(() => new OnlinePumpSdk(connection), [connection]);
   const ammSdk = useMemo(() => new OnlinePumpAmmSdk(connection), [connection]);
 
@@ -228,6 +243,7 @@ export function TradePanel({
 
   async function sendAndConfirm(instructions: TransactionInstruction[]) {
     if (!publicKey) throw new Error("Connect your Solana wallet first.");
+    if (!sendTransaction) throw new Error("The connected Reown wallet does not expose transaction signing.");
     if (instructions.length === 0) throw new Error("Pump SDK returned no transaction instructions.");
     const latest = await connection.getLatestBlockhash("confirmed");
     const transaction = new Transaction({
@@ -377,7 +393,7 @@ export function TradePanel({
 
   async function handleSubmit() {
     if (!connected || !publicKey) {
-      toast({ title: "Connect your Solana wallet", description: "Connect Phantom before trading.", variant: "destructive" });
+      toast({ title: "Connect your Solana wallet", description: "Connect a wallet through Reown AppKit before trading.", variant: "destructive" });
       return;
     }
     setPending(true);
@@ -411,8 +427,8 @@ export function TradePanel({
         <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Trade {token.symbol}</h3>
         <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5 text-center">
           <Wallet className="mx-auto size-6 text-violet-300" />
-          <p className="text-sm text-muted-foreground">Connect Phantom to trade. Live trading remains disabled until mainnet transaction validation is explicitly approved.</p>
-          <WalletMultiButton className="!h-11 !w-full !justify-center !rounded-lg" />
+          <p className="text-sm text-muted-foreground">Connect a Solana wallet through Reown AppKit to trade. Live trading remains disabled until mainnet transaction validation is explicitly approved.</p>
+          <Button type="button" className="h-11 w-full" onClick={() => void open({ view: "Connect" })}>Connect wallet</Button>
         </div>
       </div>
     );
