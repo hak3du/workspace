@@ -20,16 +20,18 @@ const appKitNetwork =
 // Network switching stays unavailable until RPC and wallet can switch atomically.
 const networks = [appKitNetwork] as [typeof appKitNetwork];
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+if (!projectId) {
+  throw new Error("NEXT_PUBLIC_PROJECT_ID is required to initialize Reown AppKit.");
+}
 
-if (projectId) {
-  createAppKit({
+createAppKit({
     adapters: [new SolanaAdapter()],
     projectId,
     networks,
     metadata: {
       name: "AHE Market",
       description: "Quantum Launchpad token discovery and market access",
-      url: "https://github.com/hak3du/workspace",
+      url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
       icons: [],
     },
     features: { analytics: false, email: false, socials: [] },
@@ -38,8 +40,7 @@ if (projectId) {
       "--w3m-accent": "#8b5cf6",
       "--w3m-border-radius-master": "12px",
     },
-  });
-}
+});
 
 export function SolanaWalletProvider({ children }: { children: ReactNode }) {
   const endpoint = useMemo(() => clusterApiUrl(cluster), []);
