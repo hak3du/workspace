@@ -24,7 +24,7 @@ const RANGES = {
   "7D": { unit: "hour", aggregate: 4, limit: 42, seconds: 604800 },
 } as const;
 
-async function getJson<T>(url: string, headers: HeadersInit = {}): Promise<T> {
+async function getJson<T>(url: string, headers: Record<string, string> = {}): Promise<T> {
   const response = await fetch(url, {
     headers: { accept: "application/json", ...headers },
     cache: "no-store",
