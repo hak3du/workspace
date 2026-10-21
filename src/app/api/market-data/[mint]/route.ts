@@ -27,7 +27,8 @@ const RANGES = {
 async function getJson<T>(url: string, headers: Record<string, string> = {}): Promise<T> {
   const response = await fetch(url, {
     headers: { accept: "application/json", ...headers },
-    cache: "no-store",
+    cache: "force-cache",
+    next: { revalidate: 60 },
     signal: AbortSignal.timeout(8_000),
   });
   if (!response.ok) throw new Error(`Provider returned ${response.status}`);
