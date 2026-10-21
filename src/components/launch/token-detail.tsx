@@ -25,7 +25,7 @@ import { api, post } from "@/lib/api";
 import { compact, pct, priceLabel, shortAddr, timeAgo, usd } from "@/lib/format";
 import { useApp } from "@/store/app-store";
 import type { TokenDTO, TradeDTO, UserDTO, VerificationCheckDTO } from "@/lib/types";
-import { PriceChart } from "@/components/launch/price-chart";
+import { LiveMarketChart } from "@/components/launch/live-market-chart";
 import { TradePanel } from "@/components/launch/trade-panel";
 
 interface DetailResponse {
@@ -250,16 +250,8 @@ export function TokenDetail({ tokenId }: { tokenId: string }) {
             </div>
           )}
 
-          {/* chart */}
-          <div className="glass rounded-2xl p-4 sm:p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Price chart</h2>
-              <Badge variant="outline" className="border-white/10 text-[11px] text-muted-foreground">
-                last {trades.length} trades
-              </Badge>
-            </div>
-            <PriceChart trades={trades} />
-          </div>
+          {/* External OHLCV market data; simulation trades remain in their own activity table. */}
+          <LiveMarketChart mint={token.mint} symbol={token.symbol} />
 
           {/* trades */}
           <div className="glass rounded-2xl p-4 sm:p-6">
