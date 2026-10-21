@@ -428,7 +428,7 @@ export function TradePanel({
         <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5 text-center">
           <Wallet className="mx-auto size-6 text-violet-300" />
           <p className="text-sm text-muted-foreground">Connect a Solana wallet through Reown AppKit to trade. Live trading remains disabled until mainnet transaction validation is explicitly approved.</p>
-          <Button type="button" className="h-11 w-full" onClick={() => void open({ view: "Connect", namespace: "solana" })}>Connect wallet</Button>
+          <Button type="button" className="h-11 w-full" onClick={() => void open({ view: "Connect" })}>Connect wallet</Button>
         </div>
       </div>
     );
