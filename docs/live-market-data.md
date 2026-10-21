@@ -28,3 +28,17 @@ Live chart data does not make live trading available. The current marketplace st
 - Verify GeckoTerminal OHLCV response and the optional Birdeye fallback using a configured API key.
 - Run `bun run typecheck`, `bun run lint`, `bun test`, and the Vercel preview build.
 - Confirm Wallet Standard wallet discovery in the actual deployed wallet modal.
+
+## Wallet connection and signing
+
+The Launch Arena wallet session is provided by Reown AppKit's SolanaAdapter. Configure
+`NEXT_PUBLIC_PROJECT_ID` using a project ID from the Reown dashboard and restrict its
+allowed origins there. The app exposes only the network selected by
+`NEXT_PUBLIC_SOLANA_CLUSTER`; the RPC connection and AppKit network are intentionally
+kept aligned rather than offering a network switch that could sign against a different
+cluster.
+
+The trade panel reads the connected Solana address from AppKit and submits Pump SDK-built
+transactions through that same AppKit wallet provider. If the provider cannot sign, the
+request fails closed. AppKit connection does not enable live trading: the server readiness
+gate and documented transaction validation remain required.
