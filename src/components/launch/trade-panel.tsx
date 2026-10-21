@@ -19,12 +19,8 @@ import { OnlinePumpAmmSdk, PUMP_AMM_SDK, canonicalPumpPoolPda } from "@pump-fun/
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
-// A deployment flag alone is not evidence that real trading is safe. Keep live
-// transactions disabled until the integrated transaction path has been explicitly verified.
-const REAL_PUMP_TRADING_ENABLED =
-  process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" &&
-  process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true" &&
-  process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED === "true";
+// Public environment flags are necessary but not sufficient. The server readiness
+// endpoint is authoritative; unavailable or malformed readiness always fails closed.
 const TOKEN_DECIMALS_FALLBACK = 6;
 const PUMP_SLIPPAGE_PERCENT = 5;
 
@@ -78,6 +74,37 @@ export function TradePanel({
   const [walletTokenDecimals, setWalletTokenDecimals] = useState(TOKEN_DECIMALS_FALLBACK);
   const [balanceRefresh, setBalanceRefresh] = useState(0);
   const [lastSignature, setLastSignature] = useState("");
+  const [serverTradingReady, setServerTradingReady] = useState(false);
+  const realPumpTradingEnabled =
+    serverTradingReady &&
+    process.env.NEXT_PUBLIC_SOLANA_CLUSTER === "mainnet-beta" &&
+    process.env.NEXT_PUBLIC_ENABLE_REAL_PUMP_TRADING === "true" &&
+    process.env.NEXT_PUBLIC_PUMP_TRADING_VERIFIED === "true";
+
+  useEffect(() => {
+    let active = true;
+    async function refreshTradingReadiness() {
+      setServerTradingReady(false);
+      try {
+        const response = await fetch("/api/marketplace/status", {
+          cache: "no-store",
+          headers: { accept: "application/json" },
+        });
+        const status = response.ok ? await response.json() as { realTransactionsEnabled?: unknown; productionReady?: unknown; environment?: unknown } : null;
+        if (active) {
+          setServerTradingReady(
+            status?.realTransactionsEnabled === true &&
+            status?.productionReady === true &&
+            status?.environment === "mainnet"
+          );
+        }
+      } catch {
+        if (active) setServerTradingReady(false);
+      }
+    }
+    void refreshTradingReadiness();
+    return () => { active = false; };
+  }, []);
 
   const mint = useMemo(() => {
     try { return new PublicKey(token.mint); } catch { return null; }
@@ -125,7 +152,7 @@ export function TradePanel({
   useEffect(() => {
     let active = true;
     async function refreshBuyQuote() {
-      if (!REAL_PUMP_TRADING_ENABLED || !connected || !publicKey || !mint || side !== "BUY" || !Number.isFinite(amt) || amt < 0.01 || amt > 100) {
+      if (!realPumpTradingEnabled || !connected || !publicKey || !mint || side !== "BUY" || !Number.isFinite(amt) || amt < 0.01 || amt > 100) {
         setBuyQuote(null);
         setQuoteError(null);
         setQuoteLoading(false);
@@ -197,7 +224,7 @@ export function TradePanel({
     }
     void refreshBuyQuote();
     return () => { active = false; };
-  }, [amt, connected, mint, publicKey, sdk, side, token.mint]);
+  }, [amt, connected, mint, publicKey, sdk, side, token.mint, realPumpTradingEnabled]);
 
   async function sendAndConfirm(instructions: TransactionInstruction[]) {
     if (!publicKey) throw new Error("Connect your Solana wallet first.");
@@ -355,7 +382,7 @@ export function TradePanel({
     }
     setPending(true);
     try {
-      if (!REAL_PUMP_TRADING_ENABLED) {
+      if (!realPumpTradingEnabled) {
         throw new Error("Live trading is disabled until the mainnet transaction flow has passed validation. No transaction was sent.");
       }
       const signature = await handleLiveTrade();
@@ -391,14 +418,14 @@ export function TradePanel({
     );
   }
 
-  const liveBlocked = !REAL_PUMP_TRADING_ENABLED || !mint ||
+  const liveBlocked = !realPumpTradingEnabled || !mint ||
     (side === "BUY" && (quoteLoading || (!graduated && (!buyQuote || Boolean(quoteError))))) ||
     (side === "SELL" && walletTokenAmount <= 0);
 
   return (
     <div className="glass rounded-2xl p-4">
-      <div className={"mb-3 rounded-lg border p-3 text-xs " + (REAL_PUMP_TRADING_ENABLED ? "border-amber-400/30 bg-amber-400/5 text-amber-100" : "border-white/10 bg-white/[0.03] text-muted-foreground")}>
-        {REAL_PUMP_TRADING_ENABLED
+      <div className={"mb-3 rounded-lg border p-3 text-xs " + (realPumpTradingEnabled ? "border-amber-400/30 bg-amber-400/5 text-amber-100" : "border-white/10 bg-white/[0.03] text-muted-foreground")}>
+        {realPumpTradingEnabled
           ? (graduated
               ? "LIVE PumpSwap trading · graduated token · 5% slippage tolerance. Quote preview is unavailable here; inspect the wallet transaction before signing."
               : "LIVE Pump.fun trading · 5% slippage tolerance. SOL budget is the maximum input. Inspect the wallet transaction before signing.")
@@ -418,37 +445,37 @@ export function TradePanel({
           </div>
           <Input type="number" inputMode="decimal" min={0.01} max={100} step={0.01} value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Amount in SOL (0.01–100)" aria-label="Amount in SOL to buy" />
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
-            <span className="text-xs text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "Estimated tokens out" : "Preview estimate · not executable"}</span>
-            <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? compact(Number(buyQuote.tokensOut) / 10 ** walletTokenDecimals) + " " + token.symbol : "—") : (demoBuyOut > 0 ? compact(demoBuyOut) + " " + token.symbol : "—")}</span>
+            <span className="text-xs text-muted-foreground">{realPumpTradingEnabled ? "Estimated tokens out" : "Preview estimate · not executable"}</span>
+            <span className="font-semibold">{realPumpTradingEnabled ? (buyQuote ? compact(Number(buyQuote.tokensOut) / 10 ** walletTokenDecimals) + " " + token.symbol : "—") : (demoBuyOut > 0 ? compact(demoBuyOut) + " " + token.symbol : "—")}</span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{REAL_PUMP_TRADING_ENABLED ? "Effective price impact (fees included)" : "Indicative price impact · preview only"}</span>
-            <span>{REAL_PUMP_TRADING_ENABLED ? (buyQuote ? "~" + buyQuote.impactPct.toFixed(2) + "%" : "—") : (demoBuyOut > 0 ? "~" + (((demoEffectiveSol / demoBuyOut / demoSpot) - 1) * 100).toFixed(2) + "%" : "—")}</span>
+            <span>{realPumpTradingEnabled ? "Effective price impact (fees included)" : "Indicative price impact · preview only"}</span>
+            <span>{realPumpTradingEnabled ? (buyQuote ? "~" + buyQuote.impactPct.toFixed(2) + "%" : "—") : (demoBuyOut > 0 ? "~" + (((demoEffectiveSol / demoBuyOut / demoSpot) - 1) * 100).toFixed(2) + "%" : "—")}</span>
           </div>
         </TabsContent>
 
         <TabsContent value="SELL" className="space-y-4 pt-3">
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
-            <span className="text-xs text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "On-chain wallet balance" : "Preview holding · not on-chain"}</span>
-            <span className="font-medium">{REAL_PUMP_TRADING_ENABLED ? compact(walletTokenAmount) + " " + token.symbol : (myHolding ? compact(myHolding.amount) + " " + token.symbol : "0 " + token.symbol)}</span>
+            <span className="text-xs text-muted-foreground">{realPumpTradingEnabled ? "On-chain wallet balance" : "Preview holding · not on-chain"}</span>
+            <span className="font-medium">{realPumpTradingEnabled ? compact(walletTokenAmount) + " " + token.symbol : (myHolding ? compact(myHolding.amount) + " " + token.symbol : "0 " + token.symbol)}</span>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {SELL_PRESETS.map((value) => <Button key={value} type="button" variant="outline" className={percent === value ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-200" : ""} onClick={() => setPercent(value)}>{value}%</Button>)}
           </div>
           <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
             <span className="text-xs text-muted-foreground">Selling</span>
-            <span className="font-semibold">{REAL_PUMP_TRADING_ENABLED ? compact(Number(realSellRaw.toString()) / 10 ** walletTokenDecimals) + " " + token.symbol : compact(demoTokenIn) + " " + token.symbol}</span>
+            <span className="font-semibold">{realPumpTradingEnabled ? compact(Number(realSellRaw.toString()) / 10 ** walletTokenDecimals) + " " + token.symbol : compact(demoTokenIn) + " " + token.symbol}</span>
           </div>
-          {!REAL_PUMP_TRADING_ENABLED && <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Indicative SOL out · preview only</span><span>{demoSellReceive > 0 ? sol(demoSellReceive) : "—"}</span></div>}
+          {!realPumpTradingEnabled && <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Indicative SOL out · preview only</span><span>{demoSellReceive > 0 ? sol(demoSellReceive) : "—"}</span></div>}
         </TabsContent>
       </Tabs>
 
-      <Button className={"mt-4 h-11 w-full " + (side === "BUY" ? "glow-violet" : "bg-red-500 text-white hover:bg-red-500/90")} onClick={handleSubmit} disabled={pending || liveBlocked || (side === "BUY" && (!(amt > 0) || amount === "")) || (REAL_PUMP_TRADING_ENABLED && side === "SELL" && realSellRaw <= BigInt(0))}>
+      <Button className={"mt-4 h-11 w-full " + (side === "BUY" ? "glow-violet" : "bg-red-500 text-white hover:bg-red-500/90")} onClick={handleSubmit} disabled={pending || liveBlocked || (side === "BUY" && (!(amt > 0) || amount === "")) || (realPumpTradingEnabled && side === "SELL" && realSellRaw <= BigInt(0))}>
         {pending && <Loader2 className="size-4 animate-spin" />}
-        {pending ? "Waiting for Solana confirmation…" : !REAL_PUMP_TRADING_ENABLED ? "Live trading disabled" : (side === "BUY" ? "Buy on Solana" : "Sell on Solana")}
+        {pending ? "Waiting for Solana confirmation…" : !realPumpTradingEnabled ? "Live trading disabled" : (side === "BUY" ? "Buy on Solana" : "Sell on Solana")}
       </Button>
       {lastSignature && <a className="mt-2 block break-all text-center text-xs text-violet-300 underline" href={"https://solscan.io/tx/" + encodeURIComponent(lastSignature)} target="_blank" rel="noreferrer">Inspect confirmed transaction on Solscan</a>}
-      <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{REAL_PUMP_TRADING_ENABLED ? "Network fees and Pump protocol fees apply. No transaction is sent unless you approve it in your wallet." : "Preview only · no transaction is submitted and no simulated trade is recorded."}</p>
+      <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{realPumpTradingEnabled ? "Network fees and Pump protocol fees apply. No transaction is sent unless you approve it in your wallet." : "Preview only · no transaction is submitted and no simulated trade is recorded."}</p>
     </div>
   );
 }
