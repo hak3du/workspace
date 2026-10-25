@@ -45,7 +45,7 @@ The checked-in `.env.example` is a local SQLite configuration template. Replace 
 ```powershell
 bunx next dev -p 3000
 bunx prisma generate
-bunx next lint
+bun run lint
 ```
 
 Review `package.json` before using its `build` or database scripts on Windows: the current scripts include Unix shell utilities, and `db:push` uses `--accept-data-loss`. Do **not** run data-loss-accepting database commands against a database containing data you need.
